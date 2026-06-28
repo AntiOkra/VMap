@@ -32,6 +32,7 @@ public:
 	int Initialize(CMzPoint& min_point, CMzPoint& max_point, double pitch);
 	int GetCellCoordinates(CMzPoint& point, int& x, int& y, int& z);
 	int AddNode(AdxNode* node);
+	double CellSize() const;
 	int Clear();
 
 	int GetCellIndex(int& x, int& y, int& z, int& cell_index);

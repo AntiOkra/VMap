@@ -82,6 +82,11 @@ int SpatialGrid::GetCellIndex(int& x, int& y, int& z, int& cell_index)
 	return 0;
 }
 
+double SpatialGrid::CellSize() const
+{
+	return cell_size_;
+}
+
 int SpatialGrid::Clear()
 {
 	cells_.clear();

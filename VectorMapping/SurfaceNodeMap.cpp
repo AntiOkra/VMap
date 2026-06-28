@@ -150,7 +150,15 @@ int SurfaceNodeMap::FindNearestNode(CMzPoint& point, double upper_limit, AdxNode
 	int ax, ay, az;
 	spatial_grid_.GetCellCoordinates(point, ax, ay, az);
 
-	// ‘OŒã‚ğŠÜ‚Ş3index•ª‚ğŒŸõ
+	if (spatial_grid_.CellSize() <= 0.0) {
+		return 1;
+	}
+
+	int cell_radius = static_cast<int>(ceil(upper_limit / spatial_grid_.CellSize()));
+	if (cell_radius < 1) {
+		cell_radius = 1;
+	}
+
 	bool exist_node = false;
 	double min_dst = 1E100;
 	AdxNode *p_nearest_node = NULL;
@@ -159,9 +167,9 @@ int SurfaceNodeMap::FindNearestNode(CMzPoint& point, double upper_limit, AdxNode
 	AdxNode *tmp_node = NULL;
 	double tmp_dst = 0.0;
 
-	for (int ix = ax - 1; ix <= ax + 1; ix++) {
-		for (int iy = ay - 1; iy <= ay + 1; iy++) {
-			for (int iz = az - 1; iz <= az + 1; iz++) {
+	for (int ix = ax - cell_radius; ix <= ax + cell_radius; ix++) {
+		for (int iy = ay - cell_radius; iy <= ay + cell_radius; iy++) {
+			for (int iz = az - cell_radius; iz <= az + cell_radius; iz++) {
 
 				if (spatial_grid_.GetCellIndex(ix, iy, iz, area_index) != 0) {
 					continue;
