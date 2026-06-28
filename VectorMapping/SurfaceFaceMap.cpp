@@ -74,21 +74,32 @@ int SurfaceFaceMap::MapForces(NastranModel& nastran, double upper_limit, CMzPoin
 
 	for (int i = 0; i < static_cast<int>(faces_.size()); i++) {
 		SurfaceFace& face = faces_[i];
-		const NastranElement* source_element = NULL;
-		double distance = 0.0;
+		const double sample_points[3][3] = {
+			{ 2.0 / 3.0, 1.0 / 6.0, 1.0 / 6.0 },
+			{ 1.0 / 6.0, 2.0 / 3.0, 1.0 / 6.0 },
+			{ 1.0 / 6.0, 1.0 / 6.0, 2.0 / 3.0 }
+		};
+		const double sample_area = face.area_ / 3.0;
 
-		if (FindNearestNastranElement(nastran, face.centroid_, upper_limit, &source_element, distance) != 0) {
-			continue;
+		for (int sample_index = 0; sample_index < 3; sample_index++) {
+			const double* barycentric_weights = sample_points[sample_index];
+			CMzPoint sample_point = CalculateFaceSamplePoint(face, barycentric_weights);
+			const NastranElement* source_element = NULL;
+			double distance = 0.0;
+
+			if (FindNearestNastranElement(nastran, sample_point, upper_limit, &source_element, distance) != 0) {
+				continue;
+			}
+
+			CMzPoint pressure = CalculateElementPressure(nastran, *source_element);
+			CMzPoint sample_force;
+			sample_force.x = pressure.x * sample_area * 1000.0 * ratio.x;
+			sample_force.y = pressure.y * sample_area * 1000.0 * ratio.y;
+			sample_force.z = pressure.z * sample_area * 1000.0 * ratio.z;
+
+			AddWeightedSampleForce(face, sample_force, barycentric_weights);
+			mapped_force_ += sample_force;
 		}
-
-		CMzPoint pressure = CalculateElementPressure(nastran, *source_element);
-		CMzPoint face_force;
-		face_force.x = pressure.x * face.area_ * 1000.0 * ratio.x;
-		face_force.y = pressure.y * face.area_ * 1000.0 * ratio.y;
-		face_force.z = pressure.z * face.area_ * 1000.0 * ratio.z;
-
-		AddFaceForce(face, face_force);
-		mapped_force_ += face_force;
 	}
 
 	return 0;
@@ -159,16 +170,30 @@ CMzPoint SurfaceFaceMap::CalculateElementCentroid(NastranModel& nastran, const N
 	return centroid;
 }
 
-void SurfaceFaceMap::AddFaceForce(SurfaceFace& face, CMzPoint& force)
+CMzPoint SurfaceFaceMap::CalculateFaceSamplePoint(SurfaceFace& face, const double barycentric_weights[3])
 {
-	CMzPoint node_force;
-	node_force.x = force.x / 3.0;
-	node_force.y = force.y / 3.0;
-	node_force.z = force.z / 3.0;
+	CMzPoint sample_point;
+	sample_point.Set(0.0, 0.0, 0.0);
 
-	nodes_[face.node_indices_[0]]->force_vector_ += node_force;
-	nodes_[face.node_indices_[1]]->force_vector_ += node_force;
-	nodes_[face.node_indices_[2]]->force_vector_ += node_force;
+	for (int i = 0; i < 3; i++) {
+		AdxNode& node = *(nodes_[face.node_indices_[i]]);
+		sample_point.x += node.coord_.x * barycentric_weights[i];
+		sample_point.y += node.coord_.y * barycentric_weights[i];
+		sample_point.z += node.coord_.z * barycentric_weights[i];
+	}
+
+	return sample_point;
+}
+
+void SurfaceFaceMap::AddWeightedSampleForce(SurfaceFace& face, CMzPoint& force, const double barycentric_weights[3])
+{
+	for (int i = 0; i < 3; i++) {
+		CMzPoint node_force;
+		node_force.x = force.x * barycentric_weights[i];
+		node_force.y = force.y * barycentric_weights[i];
+		node_force.z = force.z * barycentric_weights[i];
+		nodes_[face.node_indices_[i]]->force_vector_ += node_force;
+	}
 }
 
 int SurfaceFaceMap::ExportAdxForces(CString& opath, CString& process)

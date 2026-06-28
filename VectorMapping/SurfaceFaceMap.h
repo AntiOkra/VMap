@@ -42,5 +42,6 @@ private:
 	int FindNearestNastranElement(NastranModel& nastran, CMzPoint& point, double upper_limit, const NastranElement** element, double& distance);
 	CMzPoint CalculateElementPressure(NastranModel& nastran, const NastranElement& element);
 	CMzPoint CalculateElementCentroid(NastranModel& nastran, const NastranElement& element);
-	void AddFaceForce(SurfaceFace& face, CMzPoint& force);
+	CMzPoint CalculateFaceSamplePoint(SurfaceFace& face, const double barycentric_weights[3]);
+	void AddWeightedSampleForce(SurfaceFace& face, CMzPoint& force, const double barycentric_weights[3]);
 };
