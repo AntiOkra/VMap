@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <vector>
+#include <utility>
 #include"AdxNode.h"
 #include"SpatialGrid.h"
 #include"MzPoint.h"
@@ -29,6 +30,8 @@ public:
 	void Clear();
 
 private:
+	int FindNearestNodes(CMzPoint& point, double upper_limit, int max_count, std::vector<std::pair<AdxNode*, double>>& nearest_nodes);
+	void DistributeForce(const CMzPoint& force, const std::vector<std::pair<AdxNode*, double>>& nearest_nodes);
 	std::vector<std::unique_ptr<AdxNode>>	nodes_;
 	SpatialGrid				spatial_grid_;
 	CMzPoint				mapped_force_;

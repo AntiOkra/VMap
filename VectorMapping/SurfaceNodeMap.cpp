@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "SurfaceNodeMap.h"
+#include <algorithm>
 
 
 SurfaceNodeMap::SurfaceNodeMap()
@@ -45,9 +46,6 @@ int SurfaceNodeMap::BuildSpatialGrid()
 
 int SurfaceNodeMap::MapForces(NastranModel& nastran, double upper_limit, CMzPoint ratio)
 {
-	AdxNode* p_node=NULL;
-	double distance;
-	CString msg;
 
 	const auto& nastran_nodes = nastran.Nodes();
 	for (int i = 0; i < nastran_nodes.size(); i++) {
@@ -86,10 +84,9 @@ int SurfaceNodeMap::MapForces(NastranModel& nastran, double upper_limit, CMzPoin
 		map_force.y = n.force_vector_.y * ratio.y;
 		map_force.z = n.force_vector_.z * ratio.z;
 
-		if (FindNearestNode(n.coord_, upper_limit, &p_node, distance) == 0) {
-			// msg.Format(_T("PAIR_EXIST Nastran_Node(%d) ADX_NODE(%d) DST(%10.3f)\n"), n.id_,p_node->id_,distance);
-			// WriteLog(msg);
-			p_node->force_vector_ += map_force;
+		std::vector<std::pair<AdxNode*, double>> nearest_nodes;
+		if (FindNearestNodes(n.coord_, upper_limit, 4, nearest_nodes) == 0) {
+			DistributeForce(map_force, nearest_nodes);
 			mapped_force_ += map_force;
 		}
 		else {
@@ -143,66 +140,102 @@ int SurfaceNodeMap::FindNearestNodeByBruteForce(CMzPoint& point, double upper_li
 
 int SurfaceNodeMap::FindNearestNode(CMzPoint& point, double upper_limit, AdxNode** node, double& distance)
 {
-	*node = NULL;
-	distance = 1E100;
-
-	// AreaIndex
-	int ax, ay, az;
-	spatial_grid_.GetCellCoordinates(point, ax, ay, az);
-
-	if (spatial_grid_.CellSize() <= 0.0) {
+	std::vector<std::pair<AdxNode*, double>> nearest_nodes;
+	if (FindNearestNodes(point, upper_limit, 1, nearest_nodes) != 0) {
+		*node = NULL;
+		distance = 1E100;
 		return 1;
 	}
+
+	*node = nearest_nodes[0].first;
+	distance = nearest_nodes[0].second;
+	return 0;
+}
+
+int SurfaceNodeMap::FindNearestNodes(CMzPoint& point, double upper_limit, int max_count, std::vector<std::pair<AdxNode*, double>>& nearest_nodes)
+{
+	nearest_nodes.clear();
+
+	if (max_count <= 0 || upper_limit <= 0.0 || spatial_grid_.CellSize() <= 0.0) {
+		return 1;
+	}
+
+	int ax, ay, az;
+	spatial_grid_.GetCellCoordinates(point, ax, ay, az);
 
 	int cell_radius = static_cast<int>(ceil(upper_limit / spatial_grid_.CellSize()));
 	if (cell_radius < 1) {
 		cell_radius = 1;
 	}
 
-	bool exist_node = false;
-	double min_dst = 1E100;
-	AdxNode *p_nearest_node = NULL;
-
+	double upper_limit2 = upper_limit * upper_limit;
 	int area_index;
-	AdxNode *tmp_node = NULL;
-	double tmp_dst = 0.0;
 
 	for (int ix = ax - cell_radius; ix <= ax + cell_radius; ix++) {
 		for (int iy = ay - cell_radius; iy <= ay + cell_radius; iy++) {
 			for (int iz = az - cell_radius; iz <= az + cell_radius; iz++) {
-
 				if (spatial_grid_.GetCellIndex(ix, iy, iz, area_index) != 0) {
 					continue;
 				}
 
-				SpatialGridCell& a = spatial_grid_.cells_[area_index];
-				if (!a.IsEmpty()) {
-					if (a.FindNearestNode(point, &tmp_node, tmp_dst) == 0) {
-						if (tmp_dst < min_dst) {
-							min_dst = tmp_dst;
-							if (tmp_dst < upper_limit) {
-								p_nearest_node = tmp_node;
-								exist_node = true;
-							}
-						}
+				SpatialGridCell& cell = spatial_grid_.cells_[area_index];
+				for (int i = 0; i < static_cast<int>(cell.nodes_.size()); i++) {
+					AdxNode* candidate = cell.nodes_[i];
+					double distance2 = point.DistanceSquared(candidate->coord_);
+					if (distance2 < upper_limit2) {
+						nearest_nodes.push_back(std::make_pair(candidate, sqrt(distance2)));
 					}
 				}
-
 			}
 		}
 	}
 
-	if (exist_node) {
-		*node = p_nearest_node;
-		distance = min_dst;
-		return 0;
-	} else {
-		*node = NULL;
-		distance = min_dst;
+	if (nearest_nodes.empty()) {
 		return 1;
 	}
+
+	std::sort(nearest_nodes.begin(), nearest_nodes.end(), [](const std::pair<AdxNode*, double>& lhs, const std::pair<AdxNode*, double>& rhs) {
+		return lhs.second < rhs.second;
+	});
+
+	if (static_cast<int>(nearest_nodes.size()) > max_count) {
+		nearest_nodes.resize(max_count);
+	}
+
+	return 0;
 }
 
+void SurfaceNodeMap::DistributeForce(const CMzPoint& force, const std::vector<std::pair<AdxNode*, double>>& nearest_nodes)
+{
+	if (nearest_nodes.empty()) {
+		return;
+	}
+
+	const double epsilon = 1.0E-12;
+	if (nearest_nodes[0].second <= epsilon) {
+		nearest_nodes[0].first->force_vector_ += force;
+		return;
+	}
+
+	double total_weight = 0.0;
+	for (int i = 0; i < static_cast<int>(nearest_nodes.size()); i++) {
+		total_weight += 1.0 / nearest_nodes[i].second;
+	}
+
+	if (total_weight <= 0.0) {
+		nearest_nodes[0].first->force_vector_ += force;
+		return;
+	}
+
+	for (int i = 0; i < static_cast<int>(nearest_nodes.size()); i++) {
+		double weight = (1.0 / nearest_nodes[i].second) / total_weight;
+		CMzPoint distributed_force;
+		distributed_force.x = force.x * weight;
+		distributed_force.y = force.y * weight;
+		distributed_force.z = force.z * weight;
+		nearest_nodes[i].first->force_vector_ += distributed_force;
+	}
+}
 int SurfaceNodeMap::ExportAdxForces(CString& opath, CString& process)
 {
 	BOOL			ret;
