@@ -51,7 +51,7 @@ public:
 	CString		force_output_path_;
 	CListBox	m_ListElementSet;
 	CListCtrl	m_ListParts;
-	CStdioFile	m_LogFile;
+	CStdioFile	log_file_;
 	CString		m_str_selcount;
 	CString		m_StrForceX;
 	CString		m_StrForceY;

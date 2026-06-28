@@ -10,11 +10,11 @@ public:
 	AdxElementFace(int node_index[6], int& face_index);
 	~AdxElementFace(void);
 
-	int m_NodeIndex[6];
+	int node_indices_[6];
 
-	int m_FrontElementIndex;	// この面が表側になる要素
-	int m_BackElementIndex;		// この面が裏側になる要素
-	int m_NodeVertexSorted[3];	// 昇順にソートされた頂点ノードインデックス
+	int front_element_index_;	// この面が表側になる要素
+	int back_element_index_;		// この面が裏側になる要素
+	int sorted_vertex_node_indices_[3];	// 昇順にソートされた頂点ノードインデックス
 };
 
 
@@ -24,10 +24,10 @@ public:
 	AdxElement(void);
 	~AdxElement(void);
 
-	int m_ID;
-	int m_NodeID[10];
-	int m_NodeIndex[10];
-	int m_FaceIndex[4];
+	int id_;
+	int node_ids_[10];
+	int node_indices_[10];
+	int face_indices_[4];
 
 	int Read(CStringArray& words);
 };

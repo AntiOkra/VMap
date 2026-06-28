@@ -16,13 +16,13 @@ int SpatialGrid::Build(std::vector<std::unique_ptr<AdxNode>>& nodes, double pitc
 
 	for (int i = 0; i < static_cast<int>(nodes.size()); i++) {
 		AdxNode& node = *(nodes[i]);
-		if (node.m_Coord.x < min_point.x) min_point.x = node.m_Coord.x;
-		if (node.m_Coord.y < min_point.y) min_point.y = node.m_Coord.y;
-		if (node.m_Coord.z < min_point.z) min_point.z = node.m_Coord.z;
+		if (node.coord_.x < min_point.x) min_point.x = node.coord_.x;
+		if (node.coord_.y < min_point.y) min_point.y = node.coord_.y;
+		if (node.coord_.z < min_point.z) min_point.z = node.coord_.z;
 
-		if (node.m_Coord.x > max_point.x) max_point.x = node.m_Coord.x;
-		if (node.m_Coord.y > max_point.y) max_point.y = node.m_Coord.y;
-		if (node.m_Coord.z > max_point.z) max_point.z = node.m_Coord.z;
+		if (node.coord_.x > max_point.x) max_point.x = node.coord_.x;
+		if (node.coord_.y > max_point.y) max_point.y = node.coord_.y;
+		if (node.coord_.z > max_point.z) max_point.z = node.coord_.z;
 	}
 
 	Initialize(min_point, max_point, pitch);
@@ -104,7 +104,7 @@ int SpatialGrid::AddNode(AdxNode* node)
 {
 	int x, y, z;
 
-	if (GetCellCoordinates(node->m_Coord, x, y, z) != 0) {
+	if (GetCellCoordinates(node->coord_, x, y, z) != 0) {
 		return 1;
 	}
 
@@ -133,7 +133,7 @@ int SpatialGridCell::FindNearestNode(CMzPoint& point, AdxNode** node, double& di
 
 	for (int i = 0; i < static_cast<int>(nodes_.size()); i++) {
 		AdxNode& candidate = *(nodes_[i]);
-		double distance2 = point.DistanceSquared(candidate.m_Coord);
+		double distance2 = point.DistanceSquared(candidate.coord_);
 		if (distance2 < min_distance2) {
 			nearest_node = nodes_[i];
 			min_distance2 = distance2;

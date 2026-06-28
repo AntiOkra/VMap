@@ -11,9 +11,9 @@ public:
 	AdxNodeSet(void);
 	~AdxNodeSet(void);
 
-	CString m_NameAdx;	// Adxデータ上の名称
-	CString m_NameUser;	// ユーザー設定名称
+	CString adx_name_;	// Adxデータ上の名称
+	CString user_name_;	// ユーザー設定名称
 
-	std::vector<int>	m_vNodeIndex;
+	std::vector<int>	node_indices_;
 };
 

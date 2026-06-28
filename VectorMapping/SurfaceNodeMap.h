@@ -15,10 +15,10 @@ public:
 
 	std::vector<std::unique_ptr<AdxNode>>	nodes_;
 	SpatialGrid				spatial_grid_;
-	CMzPoint				m_MappedForce;
-	CMzPoint				m_LossForce;
+	CMzPoint				mapped_force_;
+	CMzPoint				loss_force_;
 
-	CStdioFile*				m_LogFile;
+	CStdioFile*				log_file_;
 
 	int MapForces(NastranModel& nastran, double upper_limit, CMzPoint ratio);
 	int FindNearestNode(CMzPoint& point, double upper_limit, AdxNode** node, double& distance);

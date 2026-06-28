@@ -169,7 +169,7 @@ int AdxModel::Read(CString& fpath)
 			// Nodeセクション終了
 			if (line.Left(1) == "$") {
 				if (crnt_node_set.get() != NULL) {
-					m_vNodeSet.push_back(std::move(crnt_node_set));
+					node_sets_.push_back(std::move(crnt_node_set));
 				}
 				crnt_node_set.reset(NULL);	
 				crnt_state = None;
@@ -180,7 +180,7 @@ int AdxModel::Read(CString& fpath)
 			// node_set
 			if (words[0] == "node_set") {
 				crnt_node_set.reset(new AdxNodeSet);
-				crnt_node_set->m_NameAdx = words[1];
+				crnt_node_set->adx_name_ = words[1];
 				continue;
 			}
 
@@ -202,10 +202,10 @@ int AdxModel::Read(CString& fpath)
 			// node data
 			crnt_node.reset(new AdxNode);
 			crnt_node->Read(words);
-			m_vNode.push_back(std::move(crnt_node));
+			nodes_.push_back(std::move(crnt_node));
 
 			if (crnt_node_set != NULL) {
-				crnt_node_set->m_vNodeIndex.push_back(static_cast<int>(m_vNode.size()) - 1);
+				crnt_node_set->node_indices_.push_back(static_cast<int>(nodes_.size()) - 1);
 			}
 
 			break;
@@ -218,8 +218,8 @@ int AdxModel::Read(CString& fpath)
 			// Elementセクション終了
 			if (line.Left(1) == "$") {
 				if (crnt_element_set.get() != NULL) {
-					m_mElementsetNametoIndex[crnt_element_set->m_NameAdx] = static_cast<int>(m_vElementSet.size());
-					m_vElementSet.push_back(std::move(crnt_element_set));
+					element_set_name_to_index_[crnt_element_set->adx_name_] = static_cast<int>(element_sets_.size());
+					element_sets_.push_back(std::move(crnt_element_set));
 				}
 				crnt_element_set.reset(NULL);
 				crnt_state = None;
@@ -234,9 +234,9 @@ int AdxModel::Read(CString& fpath)
 				CString tmp_comment;
 				int     tmp_id;
 				ElementSetInf(line, tmp_name, tmp_id, tmp_comment);
-				crnt_element_set->m_NameAdx = tmp_name;
-				crnt_element_set->m_NameUser = tmp_comment;
-				crnt_element_set->m_ID = tmp_id;
+				crnt_element_set->adx_name_ = tmp_name;
+				crnt_element_set->user_name_ = tmp_comment;
+				crnt_element_set->id_ = tmp_id;
 				continue;
 			}
 
@@ -258,10 +258,10 @@ int AdxModel::Read(CString& fpath)
 			// element_data
 			crnt_element.reset(new AdxElement);
 			crnt_element->Read(words);
-			m_vElement.push_back(std::move(crnt_element));
+			elements_.push_back(std::move(crnt_element));
 
 			if (crnt_element_set != NULL) {
-				crnt_element_set->m_vElementIndex.push_back(static_cast<int>(m_vElement.size()) - 1);
+				crnt_element_set->element_indices_.push_back(static_cast<int>(elements_.size()) - 1);
 			}
 
 			break;
@@ -275,78 +275,78 @@ int AdxModel::Read(CString& fpath)
 
 void AdxModel::RemoveAll()
 {
-	m_vNodeSet.clear();
-	m_vNode.clear();
+	node_sets_.clear();
+	nodes_.clear();
 
-	m_vElementSet.clear();
-	m_vElement.clear();
-	m_vElementFace.clear();
+	element_sets_.clear();
+	elements_.clear();
+	element_faces_.clear();
 
-	m_mElementIDtoIndex.clear();
-	m_mNodeIDtoIndex.clear();
-	m_mElementsetNametoIndex.clear();
+	element_id_to_index_.clear();
+	node_id_to_index_.clear();
+	element_set_name_to_index_.clear();
 }
 
 //
 int AdxModel::Activate()
 {
-	m_mNodeIDtoIndex.clear();
-	m_mElementIDtoIndex.clear();
-	m_vElementFace.clear();
+	node_id_to_index_.clear();
+	element_id_to_index_.clear();
+	element_faces_.clear();
 
 	// NodeMap作成
-	for (int i = 0; i < static_cast<int>(m_vNode.size()); i++) {
-		AdxNode& n = *(m_vNode[i]);
-		n.m_ElementFaceIndex.clear();
-		n.m_Type = UndefinedNode;
-		m_mNodeIDtoIndex[n.m_ID] = i;
+	for (int i = 0; i < static_cast<int>(nodes_.size()); i++) {
+		AdxNode& n = *(nodes_[i]);
+		n.element_face_indices_.clear();
+		n.type_ = UndefinedNode;
+		node_id_to_index_[n.id_] = i;
 	}
 
 	// ElementMap作成
-	for (int i = 0; i < static_cast<int>(m_vElement.size()); i++) {
-		AdxElement& e = *(m_vElement[i]);
-		m_mElementIDtoIndex[e.m_ID] = i;
+	for (int i = 0; i < static_cast<int>(elements_.size()); i++) {
+		AdxElement& e = *(elements_[i]);
+		element_id_to_index_[e.id_] = i;
 	}
 
 	// Element 内 Node_Index set
-	for (int i = 0; i < static_cast<int>(m_vElement.size()); i++) {
-		AdxElement& e = *(m_vElement[i]);
+	for (int i = 0; i < static_cast<int>(elements_.size()); i++) {
+		AdxElement& e = *(elements_[i]);
 
 		for (int j = 0; j < 10; j++) {
-			auto node_it = m_mNodeIDtoIndex.find(e.m_NodeID[j]);
-			if (node_it == m_mNodeIDtoIndex.end()) {
+			auto node_it = node_id_to_index_.find(e.node_ids_[j]);
+			if (node_it == node_id_to_index_.end()) {
 				return 1;
 			}
-			e.m_NodeIndex[j] = node_it->second;
+			e.node_indices_[j] = node_it->second;
 		}
 
 		for (int j = 0; j < 4; j++) {
-			int index_node = e.m_NodeIndex[j];
-			m_vNode[index_node]->SetType(CornerNode);
+			int index_node = e.node_indices_[j];
+			nodes_[index_node]->SetType(CornerNode);
 		}
 		for (int j = 4; j < 10; j++) {
-			int index_node = e.m_NodeIndex[j];
-			m_vNode[index_node]->SetType(MidSideNode);
+			int index_node = e.node_indices_[j];
+			nodes_[index_node]->SetType(MidSideNode);
 		}
 	}
 
 	// ElementFace生成
 	int n_index[6];
 	int face_index = -1;
-	for (int i = 0; i < static_cast<int>(m_vElement.size()); i++) {
+	for (int i = 0; i < static_cast<int>(elements_.size()); i++) {
 
-		AdxElement& e = *(m_vElement[i]);
+		AdxElement& e = *(elements_[i]);
 
 		for (int j = 0; j < 4; j++) {
 
 			for (int k = 0; k < 6; k++) {
-				n_index[k] = e.m_NodeIndex[cElementFaceIndex[j][k]];
+				n_index[k] = e.node_indices_[cElementFaceIndex[j][k]];
 			}
 
 			if (FaceExist(n_index[0], n_index[1], n_index[2], face_index)) {
-				AdxElementFace& ef = *(m_vElementFace[face_index]);
-				ef.m_BackElementIndex = i;
-				e.m_FaceIndex[j] = face_index;
+				AdxElementFace& ef = *(element_faces_[face_index]);
+				ef.back_element_index_ = i;
+				e.face_indices_[j] = face_index;
 			}
 			else {
 
@@ -355,17 +355,17 @@ int AdxModel::Activate()
 				new_face.reset(new AdxElementFace(n_index, i));
 
 				// Adxに登録
-				m_vElementFace.push_back(std::move(new_face));
-				int new_face_index = static_cast<int>(m_vElementFace.size()) - 1;
+				element_faces_.push_back(std::move(new_face));
+				int new_face_index = static_cast<int>(element_faces_.size()) - 1;
 
 				// Elementに登録
-				e.m_FaceIndex[j] = new_face_index;
+				e.face_indices_[j] = new_face_index;
 
 				// Nodeに登録
 				int v0, v1, v2;
 				num3sort(n_index[0], n_index[1], n_index[2], v0, v1, v2);
-				AdxNode& n = *(m_vNode[v0]);
-				n.m_ElementFaceIndex.push_back(new_face_index);
+				AdxNode& n = *(nodes_[v0]);
+				n.element_face_indices_.push_back(new_face_index);
 			}
 		}
 	}
@@ -384,15 +384,15 @@ bool AdxModel::FaceExist(int& s, int& c, int& e, int& face_index)
 	num3sort(s, c, e, v0, v1, v2);
 
 	// 最小インデクスのノードを頂点に持つ面とマッチング
-	AdxNode& dst_node = *(m_vNode[v0]);
+	AdxNode& dst_node = *(nodes_[v0]);
 
 	bool face_exist = false;
 
-	for (int i = 0;i < dst_node.m_ElementFaceIndex.size(); i++) {
-		AdxElementFace& ef = *(m_vElementFace[dst_node.m_ElementFaceIndex[i]]);
-		if (ef.m_NodeVertexSorted[0] == v0 && ef.m_NodeVertexSorted[1] == v1 && ef.m_NodeVertexSorted[2] == v2) {
+	for (int i = 0;i < dst_node.element_face_indices_.size(); i++) {
+		AdxElementFace& ef = *(element_faces_[dst_node.element_face_indices_[i]]);
+		if (ef.sorted_vertex_node_indices_[0] == v0 && ef.sorted_vertex_node_indices_[1] == v1 && ef.sorted_vertex_node_indices_[2] == v2) {
 			face_exist = true;
-			face_index = dst_node.m_ElementFaceIndex[i];
+			face_index = dst_node.element_face_indices_[i];
 			break;
 		}
 	}
@@ -407,9 +407,9 @@ int AdxModel::SurfaceExtract(CString& es_name, std::vector<int>& vnode, std::vec
 
 	// Search
 	int index = -1;
-	for (int i = 0; i < m_vElementSet.size(); i++) {
-		AdxElementSet& es = *(m_vElementSet[i]);
-		if (es.m_NameAdx == es_name) {
+	for (int i = 0; i < element_sets_.size(); i++) {
+		AdxElementSet& es = *(element_sets_[i]);
+		if (es.adx_name_ == es_name) {
 			index = i;
 			break;
 		}
@@ -419,14 +419,14 @@ int AdxModel::SurfaceExtract(CString& es_name, std::vector<int>& vnode, std::vec
 	}
 
 	// 表面Faceのみピックアップ
-	AdxElementSet& es = *(m_vElementSet[index]);
-	for (int i = 0; i < es.m_vElementIndex.size(); i++) {
-		int element_index = es.m_vElementIndex[i];
-		AdxElement& e = *(m_vElement[element_index]);
+	AdxElementSet& es = *(element_sets_[index]);
+	for (int i = 0; i < es.element_indices_.size(); i++) {
+		int element_index = es.element_indices_[i];
+		AdxElement& e = *(elements_[element_index]);
 		for (int k = 0; k < 4; k++) {
-			int face_index = e.m_FaceIndex[k];
-			AdxElementFace& ef = *(m_vElementFace[face_index]);
-			if (ef.m_BackElementIndex == -1) {
+			int face_index = e.face_indices_[k];
+			AdxElementFace& ef = *(element_faces_[face_index]);
+			if (ef.back_element_index_ == -1) {
 				vef.push_back(face_index);
 			}
 		}
@@ -435,9 +435,9 @@ int AdxModel::SurfaceExtract(CString& es_name, std::vector<int>& vnode, std::vec
 	// 表面Faceのノードリスト作成
 	std::map<int, int> map_node;
 	for (int i = 0; i < vef.size(); i++) {
-		AdxElementFace& ef = *(m_vElementFace[vef[i]]);
+		AdxElementFace& ef = *(element_faces_[vef[i]]);
 		for (int j = 0; j < 6; j++) {
-			map_node[ef.m_NodeIndex[j]] = vef[i];
+			map_node[ef.node_indices_[j]] = vef[i];
 		}
 	}
 	for (auto itr = map_node.begin(); itr != map_node.end(); ++itr) {
@@ -483,15 +483,15 @@ int AdxModel::ExportObj(CString& opath, CStringArray& es_names)
 
 	// ノード出力
 	for (int i = 0; i < vnode.size(); i++) {
-		AdxNode& n = *(m_vNode[vnode[i]]);
-		buf.Format(_T("v %10.3f %10.3f %10.3f\n"), n.m_Coord.x, n.m_Coord.y, n.m_Coord.z);
+		AdxNode& n = *(nodes_[vnode[i]]);
+		buf.Format(_T("v %10.3f %10.3f %10.3f\n"), n.coord_.x, n.coord_.y, n.coord_.z);
 		oFile.WriteString(buf);
 	}
 
 	// 面要素出力
 	for (int i = 0; i < vef.size(); i++) {
-		AdxElementFace& ef = *(m_vElementFace[vef[i]]);
-		buf.Format(_T("f %8d %8d %8d\n"), map_index[ef.m_NodeIndex[0]], map_index[ef.m_NodeIndex[1]], map_index[ef.m_NodeIndex[2]]);
+		AdxElementFace& ef = *(element_faces_[vef[i]]);
+		buf.Format(_T("f %8d %8d %8d\n"), map_index[ef.node_indices_[0]], map_index[ef.node_indices_[1]], map_index[ef.node_indices_[2]]);
 		oFile.WriteString(buf);
 	}
 
@@ -535,8 +535,8 @@ int AdxModel::ExportSurfaceNode(CString& opath, CStringArray& es_names)
 
 		// ノード出力
 		for (int i = 0; i < vnode.size(); i++) {
-			AdxNode& n = *(m_vNode[vnode[i]]);
-			buf.Format(_T("%8d,%10.3f,%10.3f,%10.3f\n"),n.m_ID, n.m_Coord.x, n.m_Coord.y, n.m_Coord.z);
+			AdxNode& n = *(nodes_[vnode[i]]);
+			buf.Format(_T("%8d,%10.3f,%10.3f,%10.3f\n"),n.id_, n.coord_.x, n.coord_.y, n.coord_.z);
 			oFile.WriteString(buf);
 		}
 
@@ -549,7 +549,7 @@ int AdxModel::ExportSurfaceNode(CString& opath, CStringArray& es_names)
 
 bool AdxModel::IsEmpty()
 {
-	if (m_vNode.size() > 0) {
+	if (nodes_.size() > 0) {
 		return false;
 	}
 	else {
@@ -582,10 +582,10 @@ int AdxModel::ExtractSurfaceNode(CStringArray& es_names, SurfaceNodeMap& surface
 		int adx_node_index = x.first;
 
 		// 2次ノードのみ抽出
-		//if (m_vNode[adx_node_index]->m_Type == MidSideNode) {
+		//if (nodes_[adx_node_index]->type_ == MidSideNode) {
 			std::unique_ptr<AdxNode> new_node(new AdxNode);
-			new_node->Copy(*(m_vNode[adx_node_index]));
-			new_node->m_ForceVector.Set(0.0, 0.0, 0.0);
+			new_node->Copy(*(nodes_[adx_node_index]));
+			new_node->force_vector_.Set(0.0, 0.0, 0.0);
 			surface_node.nodes_.push_back(std::move(new_node));
 		//}
 	}
@@ -600,7 +600,7 @@ int AdxModel::SortElementSet()
 
 bool CompareAdxElementSet(AdxElementSet* e1, AdxElementSet* e2)
 {
-	if (e1->m_ID < e2->m_ID) {
+	if (e1->id_ < e2->id_) {
 		return true;
 	}
 	else {

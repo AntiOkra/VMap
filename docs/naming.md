@@ -55,3 +55,4 @@ This project is moving from legacy MFC-style names to a smaller modern C++ style
 - `v0.2.0`: Introduced `SpatialGrid`/`SpatialGridCell` and moved surface-node storage to `std::unique_ptr`.
 - `v0.3.0`: Renamed primary ADX, Nastran, and surface mapping domain classes, plus first dialog-owned model/path members.
 - `v0.4.0`: Aligned physical source/header filenames with the renamed domain classes.
+- `v0.5.0`: Renamed primary model, node, element, set, and force/log data members to the trailing-underscore convention.

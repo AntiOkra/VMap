@@ -19,12 +19,12 @@ public:
 	AdxElementSet(void);
 	~AdxElementSet(void);
 
-	int     m_ID;		// ID(TSV_PRE)
-	CString m_NameAdx;	// Adxデータ上の名称
-	CString m_NameUser;	// ユーザー設定名称
+	int     id_;		// ID(TSV_PRE)
+	CString adx_name_;	// Adxデータ上の名称
+	CString user_name_;	// ユーザー設定名称
 
-	std::vector<int>	m_vElementIndex;
+	std::vector<int>	element_indices_;
 
-	//bool Compare(const AdxElementSet* a, const AdxElementSet* b) { if (a->m_ID < b->m_ID) { return true; } else { return false; } }
+	//bool Compare(const AdxElementSet* a, const AdxElementSet* b) { if (a->id_ < b->id_) { return true; } else { return false; } }
 };
 

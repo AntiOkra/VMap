@@ -4,8 +4,8 @@
 
 SurfaceNodeMap::SurfaceNodeMap()
 {
-	m_MappedForce.Set(0.0, 0.0, 0.0);
-	m_LossForce.Set(0.0, 0.0, 0.0);
+	mapped_force_.Set(0.0, 0.0, 0.0);
+	loss_force_.Set(0.0, 0.0, 0.0);
 }
 
 SurfaceNodeMap::~SurfaceNodeMap()
@@ -30,20 +30,20 @@ int SurfaceNodeMap::MapForces(NastranModel& nastran, double upper_limit, CMzPoin
 	double distance;
 	CString msg;
 
-	for (int i = 0; i < nastran.m_vNode.size(); i++) {
-		NastranNode& n = *(nastran.m_vNode[i]);
+	for (int i = 0; i < nastran.nodes_.size(); i++) {
+		NastranNode& n = *(nastran.nodes_[i]);
 
 		/* Check Code
 		{
 			AdxNode *p_node_m;
 			double   distance_m;
 			int      rc_m;
-			rc_m = NearestNode(n.m_Coord, upper_limit, &p_node_m, distance_m);
+			rc_m = NearestNode(n.coord_, upper_limit, &p_node_m, distance_m);
 
 			AdxNode *p_node_s;
 			double   distance_s;
 			int      rc_s;
-			rc_s = NearestNode(n.m_Coord, upper_limit, &p_node_s, distance_s);
+			rc_s = NearestNode(n.coord_, upper_limit, &p_node_s, distance_s);
 
 			if (rc_m == rc_s && distance_m == distance_s && p_node_m == p_node_s) {
 				msg = _T("NearestNode Same Result\n");
@@ -62,27 +62,27 @@ int SurfaceNodeMap::MapForces(NastranModel& nastran, double upper_limit, CMzPoin
 		
 		CMzPoint map_force;
 
-		map_force.x = n.m_ForceVector.x * ratio.x;
-		map_force.y = n.m_ForceVector.y * ratio.y;
-		map_force.z = n.m_ForceVector.z * ratio.z;
+		map_force.x = n.force_vector_.x * ratio.x;
+		map_force.y = n.force_vector_.y * ratio.y;
+		map_force.z = n.force_vector_.z * ratio.z;
 
-		if (FindNearestNode(n.m_Coord, upper_limit, &p_node, distance) == 0) {
-			// msg.Format(_T("PAIR_EXIST Nastran_Node(%d) ADX_NODE(%d) DST(%10.3f)\n"), n.m_ID,p_node->m_ID,distance);
+		if (FindNearestNode(n.coord_, upper_limit, &p_node, distance) == 0) {
+			// msg.Format(_T("PAIR_EXIST Nastran_Node(%d) ADX_NODE(%d) DST(%10.3f)\n"), n.id_,p_node->id_,distance);
 			// LogWrite(msg);
-			p_node->m_ForceVector += map_force;
-			m_MappedForce += map_force;
+			p_node->force_vector_ += map_force;
+			mapped_force_ += map_force;
 		}
 		else {
 			/*
 			if ( p_node == NULL ) {
-				msg.Format(_T("PAIR_NOT_EXIST Nastran_Node(%d) ADX_NODE(00000000) DST(%10.3f)\n"), n.m_ID, distance);
+				msg.Format(_T("PAIR_NOT_EXIST Nastran_Node(%d) ADX_NODE(00000000) DST(%10.3f)\n"), n.id_, distance);
 			}
 			else {
-				msg.Format(_T("PAIR_NOT_EXIST Nastran_Node(%d) ADX_NODE(%d) DST(%10.3f)\n"), n.m_ID, p_node->m_ID,distance);
+				msg.Format(_T("PAIR_NOT_EXIST Nastran_Node(%d) ADX_NODE(%d) DST(%10.3f)\n"), n.id_, p_node->id_,distance);
 			}
 			LogWrite(msg);
 			*/
-			m_LossForce += map_force;
+			loss_force_ += map_force;
 		}
 	}
 
@@ -101,7 +101,7 @@ int SurfaceNodeMap::FindNearestNodeBruteForce(CMzPoint& point, double upper_limi
 
 	for (int i = 0; i < nodes_.size(); i++) {
 		AdxNode& n = *(nodes_[i]);
-		double tmp_dst2 = n.m_Coord.DistanceSquared(point);
+		double tmp_dst2 = n.coord_.DistanceSquared(point);
 		if (tmp_dst2 < min_dst2) {
 			min_dst2 = tmp_dst2;
 			p_nearest_node = nodes_[i].get();
@@ -201,12 +201,12 @@ int SurfaceNodeMap::ExportAdxForce(CString& opath, CString& process)
 	for (int i = 0; i < nodes_.size(); i++) {
 		AdxNode& n = *(nodes_[i]);
 
-		if (n.m_ForceVector.x != 0.0 || n.m_ForceVector.y != 0.0 || n.m_ForceVector.z != 0.0) {
-			buf.Format(_T("%8d 0 %12.6f\n"), n.m_ID, n.m_ForceVector.x);
+		if (n.force_vector_.x != 0.0 || n.force_vector_.y != 0.0 || n.force_vector_.z != 0.0) {
+			buf.Format(_T("%8d 0 %12.6f\n"), n.id_, n.force_vector_.x);
 			oFile.WriteString(buf);
-			buf.Format(_T("%8d 1 %12.6f\n"), n.m_ID, n.m_ForceVector.y);
+			buf.Format(_T("%8d 1 %12.6f\n"), n.id_, n.force_vector_.y);
 			oFile.WriteString(buf);
-			buf.Format(_T("%8d 2 %12.6f\n"), n.m_ID, n.m_ForceVector.z);
+			buf.Format(_T("%8d 2 %12.6f\n"), n.id_, n.force_vector_.z);
 			oFile.WriteString(buf);
 		}
 	}
@@ -218,8 +218,8 @@ int SurfaceNodeMap::ExportAdxForce(CString& opath, CString& process)
 
 void SurfaceNodeMap::LogWrite(CString& msg)
 {
-	if (m_LogFile != NULL) {
-		m_LogFile->WriteString(msg);
+	if (log_file_ != NULL) {
+		log_file_->WriteString(msg);
 	}
 }
 
@@ -240,7 +240,7 @@ int SurfaceNodeMap::DumpNode(CString& fpath)
 	
 	for (int i = 0; i < nodes_.size(); i++) {
 		AdxNode& n = *(nodes_[i]);
-		buf.Format(_T("%8d,%12.6f,%12.6f,%12.6f,%12.6f,%12.6f,%12.6f\n"), n.m_ID, n.m_Coord.x, n.m_Coord.y, n.m_Coord.z, n.m_ForceVector.x, n.m_ForceVector.y, n.m_ForceVector.z);
+		buf.Format(_T("%8d,%12.6f,%12.6f,%12.6f,%12.6f,%12.6f,%12.6f\n"), n.id_, n.coord_.x, n.coord_.y, n.coord_.z, n.force_vector_.x, n.force_vector_.y, n.force_vector_.z);
 		oFile.WriteString(buf);
 	}
 
@@ -278,7 +278,7 @@ int SurfaceNodeMap::Dump(CString& fpath)
 					SpatialGridCell& a = spatial_grid_.cells_[array_index];
 					for (int l = 0; l < a.nodes_.size(); l++) {
 						AdxNode&n = *(a.nodes_[l]);
-						buf.Format(_T("ID(%d) X:%10.3f, Y:%10.3f, Z:%10.3f"), n.m_ID, n.m_Coord.x, n.m_Coord.y, n.m_Coord.z);
+						buf.Format(_T("ID(%d) X:%10.3f, Y:%10.3f, Z:%10.3f"), n.id_, n.coord_.x, n.coord_.y, n.coord_.z);
 						oFile.WriteString(buf);
 					}
 
@@ -302,7 +302,7 @@ void SurfaceNodeMap::Clear()
 
 	spatial_grid_.Clear();
 
-	m_MappedForce.Set(0.0, 0.0, 0.0);
-	m_LossForce.Set(0.0, 0.0, 0.0);
+	mapped_force_.Set(0.0, 0.0, 0.0);
+	loss_force_.Set(0.0, 0.0, 0.0);
 
 }

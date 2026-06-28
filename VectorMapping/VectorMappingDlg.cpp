@@ -370,8 +370,8 @@ void CVectorMappingDlg::OnBnClickedOk()
 		return;
 	}
 
-	nastran_model_.m_LogFile = &LogFile;
-	surface_node_map_.m_LogFile = &LogFile;
+	nastran_model_.log_file_ = &LogFile;
+	surface_node_map_.log_file_ = &LogFile;
 
 	if (nastran_model_.ReadNastranFile(nastran_path_) != 0) {
 		AfxMessageBox(_T("Nastranファイル読み込めませんでした"));
@@ -399,7 +399,7 @@ void CVectorMappingDlg::OnBnClickedOk()
 
 	for (int i = 0; i<m_ListElementSet.GetCount(); i++) {
 		if (m_ListElementSet.GetSel(i)) {
-			CString& name = (adx_model_.m_vElementSet[i])->m_NameAdx;
+			CString& name = (adx_model_.element_sets_[i])->adx_name_;
 			v_name.Add(name);
 		}
 	}
@@ -462,10 +462,10 @@ void CVectorMappingDlg::OnBnClickedOk()
 	buf.Format(_T("NASTRAN_FORCE:%10.3f,%10.3f,%10.3f\n"), nastran_force.x,nastran_force.y,nastran_force.z);
 	LogFile.WriteString(buf);
 
-	buf.Format(_T("MAPPED_FORCE:%10.3f,%10.3f,%10.3f\n"), surface_node_map_.m_MappedForce.x, surface_node_map_.m_MappedForce.y, surface_node_map_.m_MappedForce.z);
+	buf.Format(_T("MAPPED_FORCE:%10.3f,%10.3f,%10.3f\n"), surface_node_map_.mapped_force_.x, surface_node_map_.mapped_force_.y, surface_node_map_.mapped_force_.z);
 	LogFile.WriteString(buf);
 
-	buf.Format(_T("LOSSED_FORCE:%10.3f,%10.3f,%10.3f\n"), surface_node_map_.m_LossForce.x, surface_node_map_.m_LossForce.y, surface_node_map_.m_LossForce.z);
+	buf.Format(_T("LOSSED_FORCE:%10.3f,%10.3f,%10.3f\n"), surface_node_map_.loss_force_.x, surface_node_map_.loss_force_.y, surface_node_map_.loss_force_.z);
 	LogFile.WriteString(buf);
 
 	LogFile.Close();
@@ -536,7 +536,7 @@ void CVectorMappingDlg::OnBnClickedButtonAdxread()
 	BOOL ret;
 
 	if ( ! log_is_open_ ) {
-		ret = m_LogFile.Open(log_path, CFile::modeCreate | CFile::modeWrite | CFile::shareDenyNone | CFile::typeText);
+		ret = log_file_.Open(log_path, CFile::modeCreate | CFile::modeWrite | CFile::shareDenyNone | CFile::typeText);
 		if (ret == FALSE) {
 			return;
 		}
@@ -557,18 +557,18 @@ void CVectorMappingDlg::OnBnClickedButtonAdxread()
 		}
 
 		// IDでソート
-		//sort(adx_model_.m_vElementSet.begin(), adx_model_.m_vElementSet.end(), AdxElementSet::Compare);
+		//sort(adx_model_.element_sets_.begin(), adx_model_.element_sets_.end(), AdxElementSet::Compare);
 
 		CString s_item;
-		for (int i = 0; i < adx_model_.m_vElementSet.size(); i++) {
-			AdxElementSet& es = *(adx_model_.m_vElementSet[i]);
-			s_item.Format(_T("%-30s %-20s"), es.m_NameAdx.Trim(), es.m_NameUser.Trim());
-			//m_ListElementSet.InsertString(i, es.m_NameAdx + " " + es.m_NameUser);
+		for (int i = 0; i < adx_model_.element_sets_.size(); i++) {
+			AdxElementSet& es = *(adx_model_.element_sets_[i]);
+			s_item.Format(_T("%-30s %-20s"), es.adx_name_.Trim(), es.user_name_.Trim());
+			//m_ListElementSet.InsertString(i, es.adx_name_ + " " + es.user_name_);
 			m_ListElementSet.InsertString(i, s_item);
 		}
 
-		for (int i = 0; i < adx_model_.m_vElementSet.size(); i++) {
-			ListInsertElementSet(i,*(adx_model_.m_vElementSet[i]));
+		for (int i = 0; i < adx_model_.element_sets_.size(); i++) {
+			ListInsertElementSet(i,*(adx_model_.element_sets_[i]));
 		}
 
 		ControlEnable(true);
@@ -586,13 +586,13 @@ void CVectorMappingDlg::OnBnClickedButtonAdxread()
 	CString buf;
 
 	buf.Format(_T("-------------------------------------------------------\n"));
-	m_LogFile.WriteString(buf);
+	log_file_.WriteString(buf);
 
 	buf.Format(_T("ADX_FILE読み込みました:%s\n"), adx_path_);
-	m_LogFile.WriteString(buf);
+	log_file_.WriteString(buf);
 
 	buf.Format(_T("-------------------------------------------------------\n"));
-	m_LogFile.WriteString(buf);
+	log_file_.WriteString(buf);
 
 }
 
@@ -620,7 +620,7 @@ bool CVectorMappingDlg::EnsureLogFileOpen()
 
 	CString log_path;
 	LogFileName(adx_path_, log_path);
-	if (m_LogFile.Open(log_path, CFile::modeCreate | CFile::modeWrite | CFile::shareDenyNone | CFile::typeText) == FALSE) {
+	if (log_file_.Open(log_path, CFile::modeCreate | CFile::modeWrite | CFile::shareDenyNone | CFile::typeText) == FALSE) {
 		AfxMessageBox(_T("ログファイルを作成できませんでした"));
 		return false;
 	}
@@ -696,7 +696,7 @@ int CVectorMappingDlg::CollectCheckedElementSetNames(CStringArray& names)
 	for (int nItem = 0; nItem < nCount; nItem++) {
 		if (ListView_GetCheckState(hwndList, nItem) == TRUE) {
 			AdxElementSet* tmp_es = (AdxElementSet*)(m_ListParts.GetItemData(nItem));
-			names.Add(tmp_es->m_NameAdx);
+			names.Add(tmp_es->adx_name_);
 		}
 	}
 
@@ -737,8 +737,8 @@ void CVectorMappingDlg::OnBnClickedButtonExec()
 	nastran_model_.RemoveAll();
 	surface_node_map_.Clear();
 
-	nastran_model_.m_LogFile = &m_LogFile;
-	surface_node_map_.m_LogFile = &m_LogFile;
+	nastran_model_.log_file_ = &log_file_;
+	surface_node_map_.log_file_ = &log_file_;
 
 	if (LoadNastranInputs(nastran_model_) != 0) {
 		return;
@@ -795,42 +795,42 @@ void CVectorMappingDlg::OnBnClickedButtonExec()
 	CString buf;
 
 	buf.Format(_T("-------------------------------------------------------\n"));
-	m_LogFile.WriteString(buf);
+	log_file_.WriteString(buf);
 
 	buf.Format(_T("NASTRAN FILE:%s\n"), nastran_path_);
-	m_LogFile.WriteString(buf);
+	log_file_.WriteString(buf);
 
 	buf.Format(_T("PAM_STAMP NormalVectorFile :%s\n"), normal_pressure_path_);
-	m_LogFile.WriteString(buf);
+	log_file_.WriteString(buf);
 
 	buf.Format(_T("PAM_STAMP TangentVectorFile:%s\n"), tangent_pressure_path_);
-	m_LogFile.WriteString(buf);
+	log_file_.WriteString(buf);
 
 	buf.Format(_T("Adx Force Mapping File     :%s\n"), force_output_path_);
-	m_LogFile.WriteString(buf);
+	log_file_.WriteString(buf);
 
 	buf.Format(_T("マッピング時 係数          : X(%8.3f) Y(%8.3f) Z(%8.3f)\n"), ratio.x, ratio.y, ratio.z);
-	m_LogFile.WriteString(buf);
+	log_file_.WriteString(buf);
 
 	CMzPoint nastran_force;
 
 	nastran_model_.GetTotalForce(nastran_force);
 	buf.Format(_T("NASTRAN_荷重(kN) (元)           :%10.3f,%10.3f,%10.3f\n"), nastran_force.x / 1000.0, nastran_force.y / 1000.0, nastran_force.z / 1000.0);
-	m_LogFile.WriteString(buf);
+	log_file_.WriteString(buf);
 
 	buf.Format(_T("NASTRAN_荷重(kN) (係数処理後)   :%10.3f,%10.3f,%10.3f\n"), nastran_force.x / 1000.0 * ratio.x, nastran_force.y / 1000.0 * ratio.y, nastran_force.z / 1000.0 * ratio.z);
-	m_LogFile.WriteString(buf);
+	log_file_.WriteString(buf);
 
-	buf.Format(_T("マッピングされた荷重(kN)        :%10.3f,%10.3f,%10.3f\n"), surface_node_map_.m_MappedForce.x / 1000.0, surface_node_map_.m_MappedForce.y / 1000.0, surface_node_map_.m_MappedForce.z / 1000.0);
-	m_LogFile.WriteString(buf);
+	buf.Format(_T("マッピングされた荷重(kN)        :%10.3f,%10.3f,%10.3f\n"), surface_node_map_.mapped_force_.x / 1000.0, surface_node_map_.mapped_force_.y / 1000.0, surface_node_map_.mapped_force_.z / 1000.0);
+	log_file_.WriteString(buf);
 
-	buf.Format(_T("マッピングされなかった荷重(kN)  :%10.3f,%10.3f,%10.3f\n"), surface_node_map_.m_LossForce.x / 1000.0, surface_node_map_.m_LossForce.y / 1000.0, surface_node_map_.m_LossForce.z / 1000.0);
-	m_LogFile.WriteString(buf);
+	buf.Format(_T("マッピングされなかった荷重(kN)  :%10.3f,%10.3f,%10.3f\n"), surface_node_map_.loss_force_.x / 1000.0, surface_node_map_.loss_force_.y / 1000.0, surface_node_map_.loss_force_.z / 1000.0);
+	log_file_.WriteString(buf);
 
 	buf.Format(_T("-------------------------------------------------------\n"));
-	m_LogFile.WriteString(buf);
+	log_file_.WriteString(buf);
 
-	m_LogFile.Flush();
+	log_file_.Flush();
 
 	nastran_model_.RemoveAll();
 	surface_node_map_.Clear();
@@ -842,7 +842,7 @@ void CVectorMappingDlg::OnBnClickedCancel()
 {
 	// TODO: ここにコントロール通知ハンドラー コードを追加します。
 	if ( log_is_open_ ) {
-		m_LogFile.Close();
+		log_file_.Close();
 	}
 
 	CDialogEx::OnCancel();
@@ -859,7 +859,7 @@ void CVectorMappingDlg::OnLbnSelchangeListAdx()
 		}
 	}
 
-	// 
+	//
 	CString sel_string;
 	sel_string.Format(_T("%d"), sel_count);
 	m_str_selcount = sel_string;
@@ -923,14 +923,14 @@ void CVectorMappingDlg::ListInsertElementSet(int no_row, AdxElementSet &es)
 	*/
 
 	CString sid;
-	sid.Format(_T("%d"), es.m_ID);
+	sid.Format(_T("%d"), es.id_);
 
-	//m_ListParts.InsertItem(no_row, es.m_NameAdx);
+	//m_ListParts.InsertItem(no_row, es.adx_name_);
 
-	int insert_row = m_ListParts.InsertItem(LVIF_TEXT | LVIF_PARAM, no_row, es.m_NameAdx,0, 0, 0, (LPARAM)&(es));
+	int insert_row = m_ListParts.InsertItem(LVIF_TEXT | LVIF_PARAM, no_row, es.adx_name_,0, 0, 0, (LPARAM)&(es));
 
 	m_ListParts.SetItemText(insert_row, 1, sid);
-	m_ListParts.SetItemText(insert_row, 2, es.m_NameUser);
+	m_ListParts.SetItemText(insert_row, 2, es.user_name_);
 
 	//UpdateData(TRUE);
 }
@@ -967,13 +967,13 @@ int CVectorMappingDlg::CompareData(LPARAM lParam1, LPARAM lParam2, LPARAM lParam
 	//CSortParameter* sortParam = &m_sortParam;
 
 	if (sortParam->m_nIndex == 0) {
-		result = d1->m_NameAdx.Compare(d2->m_NameAdx); 
+		result = d1->adx_name_.Compare(d2->adx_name_);
 	}
 	else if (sortParam->m_nIndex == 1) {
-		if (d1->m_ID > d2->m_ID) {
+		if (d1->id_ > d2->id_) {
 			result = 1;
 		}
-		else if (d1->m_ID < d2->m_ID) {
+		else if (d1->id_ < d2->id_) {
 			result = -1;
 		}
 		else {
@@ -981,7 +981,7 @@ int CVectorMappingDlg::CompareData(LPARAM lParam1, LPARAM lParam2, LPARAM lParam
 		}
 	}
 	else if (sortParam->m_nIndex == 2) {
-		result = d1->m_NameUser.Compare(d2->m_NameUser);
+		result = d1->user_name_.Compare(d2->user_name_);
 	}
 
 	if (sortParam->m_bSort) {

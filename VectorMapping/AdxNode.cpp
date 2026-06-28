@@ -5,10 +5,10 @@
 
 AdxNode::AdxNode(void)
 {
-	m_ID = -1;
-	m_Coord.Set(0.0, 0.0, 0.0);
-	m_ForceVector.Set(0.0, 0.0, 0.0);
-	m_Type = UndefinedNode;
+	id_ = -1;
+	coord_.Set(0.0, 0.0, 0.0);
+	force_vector_.Set(0.0, 0.0, 0.0);
+	type_ = UndefinedNode;
 }
 
 
@@ -23,34 +23,34 @@ int AdxNode::Read(CStringArray& words)
 {
 	ASSERT(words.GetCount()>=4);
 
-	m_ID = _ttoi(words[0]);
+	id_ = _ttoi(words[0]);
 
-	m_Coord.x = _tstof(words[1]);
-	m_Coord.y = _tstof(words[2]);
-	m_Coord.z = _tstof(words[3]);
+	coord_.x = _tstof(words[1]);
+	coord_.y = _tstof(words[2]);
+	coord_.z = _tstof(words[3]);
 
 	return 0;
 }
 
 int AdxNode::Copy(AdxNode& n)
 {
-	m_ID = n.m_ID;
-	m_Coord = n.m_Coord;
-	m_ForceVector = n.m_ForceVector;
-	m_Type = n.m_Type;
+	id_ = n.id_;
+	coord_ = n.coord_;
+	force_vector_ = n.force_vector_;
+	type_ = n.type_;
 
 	return 0;
 }
 
 void AdxNode::SetType(AdxNodeType node_type)
 {
-	if (m_Type == UndefinedNode) {
-		m_Type = node_type;
+	if (type_ == UndefinedNode) {
+		type_ = node_type;
 	}
 	else {
-		if (m_Type != node_type) {
+		if (type_ != node_type) {
 			CString msg;
-			msg.Format(_T("NodeType(Žå,•›)‚ª’è‚Ü‚è‚Ü‚¹‚ñ.Node_ID(%d)"), m_ID);
+			msg.Format(_T("NodeType(Žå,•›)‚ª’è‚Ü‚è‚Ü‚¹‚ñ.Node_ID(%d)"), id_);
 			AfxMessageBox(msg);
 		}
 	}

@@ -12,12 +12,12 @@ public:
 	AdxNode(void);
 	~AdxNode(void);
 
-	int			m_ID;
-	CMzPoint	m_Coord;
-	CMzPoint	m_ForceVector;
-	AdxNodeType	m_Type;
+	int			id_;
+	CMzPoint	coord_;
+	CMzPoint	force_vector_;
+	AdxNodeType	type_;
 
-	std::vector<int>	m_ElementFaceIndex;	// このノードを頂点(最小インデクス)として持つ面インデクス
+	std::vector<int>	element_face_indices_;	// このノードを頂点(最小インデクス)として持つ面インデクス
 
 	int Read(CStringArray& words);
 	int Copy(AdxNode& n);

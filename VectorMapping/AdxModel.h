@@ -19,16 +19,16 @@ public:
 	AdxModel();
 	~AdxModel();
 
-	std::vector<std::unique_ptr<AdxNode>>			m_vNode;
-	std::vector<std::unique_ptr<AdxNodeSet>>		m_vNodeSet;
+	std::vector<std::unique_ptr<AdxNode>>			nodes_;
+	std::vector<std::unique_ptr<AdxNodeSet>>		node_sets_;
 
-	std::vector<std::unique_ptr<AdxElement>>		m_vElement;
-	std::vector<std::unique_ptr<AdxElementFace>>	m_vElementFace;
-	std::vector<std::unique_ptr<AdxElementSet>>	m_vElementSet;
+	std::vector<std::unique_ptr<AdxElement>>		elements_;
+	std::vector<std::unique_ptr<AdxElementFace>>	element_faces_;
+	std::vector<std::unique_ptr<AdxElementSet>>	element_sets_;
 
-	std::unordered_map<int, int>	m_mNodeIDtoIndex;
-	std::unordered_map<int, int>	m_mElementIDtoIndex;
-	std::map<CString, int>			m_mElementsetNametoIndex;
+	std::unordered_map<int, int>	node_id_to_index_;
+	std::unordered_map<int, int>	element_id_to_index_;
+	std::map<CString, int>			element_set_name_to_index_;
 
 	void RemoveAll();
 	int Read(CString& fpath);

@@ -4,7 +4,7 @@
 
 NastranNode::NastranNode()
 {
-	m_Area = 0.0;
+	area_ = 0.0;
 }
 
 NastranNode::~NastranNode()
@@ -18,25 +18,25 @@ NastranNode::~NastranNode()
 int NastranNode::Read(CString& line1, CString& line2)
 {
 	CString sid, scoord_x, scoord_y, scoord_z;
-	
-	m_ID = -1;
+
+	id_ = -1;
 
 	sid = line1.Mid(16, 8);
 	scoord_x = line1.Mid(40, 16);
 	scoord_y = line1.Mid(56, 16);
 	scoord_z = line2.Mid(8, 16);
 
-	m_ID = _ttoi(sid);
-	m_Coord.x = _ttof(scoord_x);
-	m_Coord.y = _ttof(scoord_y);
-	m_Coord.z = _ttof(scoord_z);
+	id_ = _ttoi(sid);
+	coord_.x = _ttof(scoord_x);
+	coord_.y = _ttof(scoord_y);
+	coord_.z = _ttof(scoord_z);
 
 	return 0;
 }
 
 NastranElement::NastranElement()
 {
-	m_Area = 0.0;
+	area_ = 0.0;
 }
 
 NastranElement::~NastranElement()
@@ -52,27 +52,27 @@ int NastranElement::Read(const CString& line)
 {
 	CString stype, sid;
 	CString snode_id[4];
-	
-	m_ID = -1;
+
+	id_ = -1;
 
 	stype = line.Left(6);
 	stype.Trim();
 	sid = line.Mid(8, 8);
 
 	if ( stype=="CTRIA3" ) {
-		m_type = CTRIA3;
+		type_ = CTRIA3;
 		snode_id[0] = line.Mid(24,8);
 		snode_id[1] = line.Mid(32,8);
 		snode_id[2] = line.Mid(40,8);
 		snode_id[3] = "-1";
 	} else if ( stype=="CQUAD4" ) {
-		m_type = CQUAD4;
+		type_ = CQUAD4;
 		snode_id[0] = line.Mid(24,8);
 		snode_id[1] = line.Mid(32,8);
 		snode_id[2] = line.Mid(40,8);
 		snode_id[3] = line.Mid(48,8);
 	} else if ( stype=="CBEAM" ) {
-		m_type = CBEAM;
+		type_ = CBEAM;
 		snode_id[0] = line.Mid(24,8);
 		snode_id[1] = line.Mid(32,8);
 		snode_id[2] = "-1";
@@ -81,18 +81,18 @@ int NastranElement::Read(const CString& line)
 		return 1;
 	}
 
-	m_ID = _ttoi(sid);
-	m_NodeID[0] = _ttoi(snode_id[0]);
-	m_NodeID[1] = _ttoi(snode_id[1]);
-	m_NodeID[2] = _ttoi(snode_id[2]);
-	m_NodeID[3] = _ttoi(snode_id[3]);
+	id_ = _ttoi(sid);
+	node_ids_[0] = _ttoi(snode_id[0]);
+	node_ids_[1] = _ttoi(snode_id[1]);
+	node_ids_[2] = _ttoi(snode_id[2]);
+	node_ids_[3] = _ttoi(snode_id[3]);
 
 	return 0;
 }
 
 NastranModel::NastranModel()
 {
-	m_LogFile = NULL;
+	log_file_ = NULL;
 }
 
 NastranModel::~NastranModel()
@@ -101,17 +101,17 @@ NastranModel::~NastranModel()
 
 void NastranModel::RemoveAll()
 {
-	m_vNode.clear();
-	m_vElement.clear();
-	m_mNodeIDtoIndex.clear();
-	m_mElementIDtoIndex.clear();
-	m_LogFile = NULL;
+	nodes_.clear();
+	elements_.clear();
+	node_id_to_index_.clear();
+	element_id_to_index_.clear();
+	log_file_ = NULL;
 }
 
 void NastranModel::LogWrite( CString& msg )
 {
-	if ( m_LogFile != NULL ) {
-		m_LogFile->WriteString( msg );
+	if ( log_file_ != NULL ) {
+		log_file_->WriteString( msg );
 	}
 }
 
@@ -170,7 +170,7 @@ int NastranModel::ReadNastranFile(const CString& fpath)
 				return 1;
 			}
 
-			m_vNode.push_back(std::move(crnt_node));
+			nodes_.push_back(std::move(crnt_node));
 
 		}
 		else if (line.Left(6) == "CTRIA3") {
@@ -183,7 +183,7 @@ int NastranModel::ReadNastranFile(const CString& fpath)
 				return 1;
 			}
 
-			m_vElement.push_back(std::move(crnt_element));
+			elements_.push_back(std::move(crnt_element));
 
 		}
 		else if (line.Left(6) == "CQUAD4") {
@@ -196,7 +196,7 @@ int NastranModel::ReadNastranFile(const CString& fpath)
 				return 1;
 			}
 
-			m_vElement.push_back(std::move(crnt_element));
+			elements_.push_back(std::move(crnt_element));
 		}
 		else if (line.Left(5) == "CBEAM") {
 
@@ -208,7 +208,7 @@ int NastranModel::ReadNastranFile(const CString& fpath)
 				return 1;
 			}
 
-			m_vElement.push_back(std::move(crnt_element));
+			elements_.push_back(std::move(crnt_element));
 		}
 	}
 
@@ -225,29 +225,29 @@ int NastranModel::ReadNastranFile(const CString& fpath)
 
 int NastranModel::Indexing()
 {
-	m_mNodeIDtoIndex.clear();
-	for ( int i=0; i<m_vNode.size(); i++ ) {
-		NastranNode& n = *(m_vNode[i]);
-		m_mNodeIDtoIndex[n.m_ID] = i;
+	node_id_to_index_.clear();
+	for ( int i=0; i<nodes_.size(); i++ ) {
+		NastranNode& n = *(nodes_[i]);
+		node_id_to_index_[n.id_] = i;
 	}
 
-	m_mElementIDtoIndex.clear();
-	for ( int i=0; i<m_vElement.size(); i++ ) {
-		NastranElement& e = *(m_vElement[i]);
-		m_mElementIDtoIndex[e.m_ID] = i;
+	element_id_to_index_.clear();
+	for ( int i=0; i<elements_.size(); i++ ) {
+		NastranElement& e = *(elements_[i]);
+		element_id_to_index_[e.id_] = i;
 	}
 
-	for (int i = 0; i<m_vElement.size(); i++) {
-		NastranElement& e = *(m_vElement[i]);
+	for (int i = 0; i<elements_.size(); i++) {
+		NastranElement& e = *(elements_[i]);
 		int node_cnt = 0;
-		if (e.m_type == CTRIA3) {
+		if (e.type_ == CTRIA3) {
 			node_cnt = 3;
 		}
 		else {
 			node_cnt = 4;
 		}
 		for (int j = 0; j < node_cnt; j++) {
-			e.m_NodeIndex[j] = m_mNodeIDtoIndex[e.m_NodeID[j]];
+			e.node_indices_[j] = node_id_to_index_[e.node_ids_[j]];
 		}
 	}
 
@@ -298,19 +298,19 @@ int NastranModel::ReadNormalVectorFile(const CString& fpath)
 
 			int crnt_id = _ttoi(words[0]);
 
-			auto it =  m_mNodeIDtoIndex.find(crnt_id);
-			if (it == m_mNodeIDtoIndex.end() ) {
+			auto it =  node_id_to_index_.find(crnt_id);
+			if (it == node_id_to_index_.end() ) {
 				msg.Format(_T(" #ERROR ノードIDが見つかりません(%d)行目. ID=(%d)\n"), line_count,crnt_id);
 				LogWrite(msg);
 				return 1;
 			}
 
 			int index = (*it).second;
-			NastranNode& n = *(m_vNode[index]);
+			NastranNode& n = *(nodes_[index]);
 
-			n.m_NormalPressureVector.x = _ttof(words[1]);
-			n.m_NormalPressureVector.y = _ttof(words[2]);
-			n.m_NormalPressureVector.z = _ttof(words[3]);
+			n.normal_pressure_vector_.x = _ttof(words[1]);
+			n.normal_pressure_vector_.y = _ttof(words[2]);
+			n.normal_pressure_vector_.z = _ttof(words[3]);
 		}
 	}
 
@@ -363,19 +363,19 @@ int NastranModel::ReadTangentVectorFile(const CString& fpath)
 
 			int crnt_id = _ttoi(words[0]);
 
-			auto it =  m_mNodeIDtoIndex.find(crnt_id);
-			if (it == m_mNodeIDtoIndex.end() ) {
+			auto it =  node_id_to_index_.find(crnt_id);
+			if (it == node_id_to_index_.end() ) {
 				msg.Format(_T(" #ERROR ノードIDが見つかりません(%d)行目. ID=(%d)\n"), line_count,crnt_id);
 				LogWrite(msg);
 				return 1;
 			}
 
 			int index = (*it).second;
-			NastranNode& n = *(m_vNode[index]);
+			NastranNode& n = *(nodes_[index]);
 
-			n.m_TangentPressureVector.x = _ttof(words[1]);
-			n.m_TangentPressureVector.y = _ttof(words[2]);
-			n.m_TangentPressureVector.z = _ttof(words[3]);
+			n.tangent_pressure_vector_.x = _ttof(words[1]);
+			n.tangent_pressure_vector_.y = _ttof(words[2]);
+			n.tangent_pressure_vector_.z = _ttof(words[3]);
 		}
 	}
 
@@ -389,62 +389,62 @@ int NastranModel::ForceCalc()
 {
 
 	// ノードの担当面積を求める
-	for (int i=0; i<m_vElement.size(); i++ ) {
+	for (int i=0; i<elements_.size(); i++ ) {
 
-		NastranElement& e = *(m_vElement[i]);
+		NastranElement& e = *(elements_[i]);
 
 		// 要素面積を求める
 
-		if ( e.m_type == CTRIA3 ) {
+		if ( e.type_ == CTRIA3 ) {
 
-			NastranNode& n0 = *(m_vNode[e.m_NodeIndex[0]]);
-			NastranNode& n1 = *(m_vNode[e.m_NodeIndex[1]]);
-			NastranNode& n2 = *(m_vNode[e.m_NodeIndex[2]]);
+			NastranNode& n0 = *(nodes_[e.node_indices_[0]]);
+			NastranNode& n1 = *(nodes_[e.node_indices_[1]]);
+			NastranNode& n2 = *(nodes_[e.node_indices_[2]]);
 
-			e.m_Area = AreaTriangle(n0.m_Coord, n1.m_Coord, n2.m_Coord);
+			e.area_ = AreaTriangle(n0.coord_, n1.coord_, n2.coord_);
 
-			double node_area = e.m_Area / 3.0;
-			n0.m_Area += node_area;
-			n1.m_Area += node_area;
-			n2.m_Area += node_area;
+			double node_area = e.area_ / 3.0;
+			n0.area_ += node_area;
+			n1.area_ += node_area;
+			n2.area_ += node_area;
 
-		} else if ( e.m_type == CQUAD4 ) {
+		} else if ( e.type_ == CQUAD4 ) {
 
-			NastranNode& n0 = *(m_vNode[e.m_NodeIndex[0]]);
-			NastranNode& n1 = *(m_vNode[e.m_NodeIndex[1]]);
-			NastranNode& n2 = *(m_vNode[e.m_NodeIndex[2]]);
-			NastranNode& n3 = *(m_vNode[e.m_NodeIndex[3]]);
+			NastranNode& n0 = *(nodes_[e.node_indices_[0]]);
+			NastranNode& n1 = *(nodes_[e.node_indices_[1]]);
+			NastranNode& n2 = *(nodes_[e.node_indices_[2]]);
+			NastranNode& n3 = *(nodes_[e.node_indices_[3]]);
 
-			e.m_Area = AreaQuad(n0.m_Coord, n1.m_Coord, n2.m_Coord, n3.m_Coord);
+			e.area_ = AreaQuad(n0.coord_, n1.coord_, n2.coord_, n3.coord_);
 
-			double node_area = e.m_Area / 4.0;
-			n0.m_Area += node_area;
-			n1.m_Area += node_area;
-			n2.m_Area += node_area;
-			n3.m_Area += node_area;
+			double node_area = e.area_ / 4.0;
+			n0.area_ += node_area;
+			n1.area_ += node_area;
+			n2.area_ += node_area;
+			n3.area_ += node_area;
 
-		} else if ( e.m_type == CBEAM ) {
+		} else if ( e.type_ == CBEAM ) {
 
-			NastranNode& n0 = *(m_vNode[e.m_NodeIndex[0]]);
-			NastranNode& n1 = *(m_vNode[e.m_NodeIndex[1]]);
+			NastranNode& n0 = *(nodes_[e.node_indices_[0]]);
+			NastranNode& n1 = *(nodes_[e.node_indices_[1]]);
 
 			double seg_length = 0.0;
-			seg_length = n0.m_Coord.Distance(n1.m_Coord);
+			seg_length = n0.coord_.Distance(n1.coord_);
 
-			e.m_Area = seg_length;
+			e.area_ = seg_length;
 
-			double node_area = e.m_Area / 2.0;
-			n0.m_Area += node_area;
-			n1.m_Area += node_area;
+			double node_area = e.area_ / 2.0;
+			n0.area_ += node_area;
+			n1.area_ += node_area;
 
 		}
 	}
 
 	// 荷重を計算
-	for ( int i=0; i<m_vNode.size(); i++ ) {
-		NastranNode& n = *(m_vNode[i]);
-		n.m_PressureVector = n.m_NormalPressureVector + n.m_TangentPressureVector;
-		n.m_ForceVector = n.m_PressureVector * n.m_Area * 1000.0;	// 単位:(N)
+	for ( int i=0; i<nodes_.size(); i++ ) {
+		NastranNode& n = *(nodes_[i]);
+		n.pressure_vector_ = n.normal_pressure_vector_ + n.tangent_pressure_vector_;
+		n.force_vector_ = n.pressure_vector_ * n.area_ * 1000.0;	// 単位:(N)
 	}
 
 	return 0;
@@ -464,9 +464,9 @@ int NastranModel::Dump_N(CString& fpath)
 
 	// 要素情報出力
 	/*
-	for (int i = 0; i < m_vElement.size(); i++) {
-		NastranElement& e = *(m_vElement[i]);
-		buf.Format(_T("E ID(%8d) ,%12.7f\n"), e.m_ID, e.m_Area);
+	for (int i = 0; i < elements_.size(); i++) {
+		NastranElement& e = *(elements_[i]);
+		buf.Format(_T("E ID(%8d) ,%12.7f\n"), e.id_, e.area_);
 		oFile.WriteString(buf);
 	}
 	*/
@@ -476,15 +476,15 @@ int NastranModel::Dump_N(CString& fpath)
 	oFile.WriteString(buf);
 
 	// ノード情報出力
-	for (int i = 0; i < m_vNode.size(); i++) {
-		NastranNode& n = *(m_vNode[i]);
-		buf.Format(_T("%8d,%12.7f,%12.7f,%12.7f,%12.7f,%12.7f,%12.7f,%12.7f,%12.7f,%12.7f,%12.7f,%12.7f,%12.7f,%12.7f\n"), 
-			n.m_ID,
-			n.m_Coord.x, n.m_Coord.y, n.m_Coord.z,
-			n.m_NormalPressureVector.x, n.m_NormalPressureVector.y, n.m_NormalPressureVector.z, 
-			n.m_TangentPressureVector.x, n.m_TangentPressureVector.y, n.m_TangentPressureVector.z,
-			n.m_Area,
-			n.m_ForceVector.x, n.m_ForceVector.y, n.m_ForceVector.z
+	for (int i = 0; i < nodes_.size(); i++) {
+		NastranNode& n = *(nodes_[i]);
+		buf.Format(_T("%8d,%12.7f,%12.7f,%12.7f,%12.7f,%12.7f,%12.7f,%12.7f,%12.7f,%12.7f,%12.7f,%12.7f,%12.7f,%12.7f\n"),
+			n.id_,
+			n.coord_.x, n.coord_.y, n.coord_.z,
+			n.normal_pressure_vector_.x, n.normal_pressure_vector_.y, n.normal_pressure_vector_.z,
+			n.tangent_pressure_vector_.x, n.tangent_pressure_vector_.y, n.tangent_pressure_vector_.z,
+			n.area_,
+			n.force_vector_.x, n.force_vector_.y, n.force_vector_.z
 			);
 		oFile.WriteString(buf);
 	}
@@ -511,9 +511,9 @@ int NastranModel::Dump_E(CString& fpath)
 	oFile.WriteString(buf);
 
 	// 要素情報出力
-	for (int i = 0; i < m_vElement.size(); i++) {
-		NastranElement& e = *(m_vElement[i]);
-		buf.Format(_T("%8d,%12.7f\n"), e.m_ID, e.m_Area);
+	for (int i = 0; i < elements_.size(); i++) {
+		NastranElement& e = *(elements_[i]);
+		buf.Format(_T("%8d,%12.7f\n"), e.id_, e.area_);
 		oFile.WriteString(buf);
 	}
 
@@ -523,15 +523,15 @@ int NastranModel::Dump_E(CString& fpath)
 	oFile.WriteString(buf);
 
 	// ノード情報出力
-	for (int i = 0; i < m_vNode.size(); i++) {
-		NastranNode& n = *(m_vNode[i]);
+	for (int i = 0; i < nodes_.size(); i++) {
+		NastranNode& n = *(nodes_[i]);
 		buf.Format(_T("NODE_ID(%8d),%12.7f,%12.7f,%12.7f,%12.7f,%12.7f,%12.7f,%12.7f,%12.7f,%12.7f,%12.7f,%12.7f,%12.7f,%12.7f\n"),
-			n.m_ID,
-			n.m_Coord.x, n.m_Coord.y, n.m_Coord.z,
-			n.m_NormalPressureVector.x, n.m_NormalPressureVector.y, n.m_NormalPressureVector.z,
-			n.m_TangentPressureVector.x, n.m_TangentPressureVector.y, n.m_TangentPressureVector.z,
-			n.m_Area,
-			n.m_ForceVector.x, n.m_ForceVector.y, n.m_ForceVector.z
+			n.id_,
+			n.coord_.x, n.coord_.y, n.coord_.z,
+			n.normal_pressure_vector_.x, n.normal_pressure_vector_.y, n.normal_pressure_vector_.z,
+			n.tangent_pressure_vector_.x, n.tangent_pressure_vector_.y, n.tangent_pressure_vector_.z,
+			n.area_,
+			n.force_vector_.x, n.force_vector_.y, n.force_vector_.z
 		);
 		oFile.WriteString(buf);
 	}
@@ -544,7 +544,7 @@ int NastranModel::Dump_E(CString& fpath)
 
 bool NastranModel::IsEmpty()
 {
-	if (m_vNode.size() > 0) {
+	if (nodes_.size() > 0) {
 		return false;
 	}
 	else {
@@ -556,9 +556,9 @@ int  NastranModel::GetTotalForce(CMzPoint& force)
 {
 	CMzPoint total_force(0.0, 0.0, 0.0);
 
-	for (int i = 0; i < m_vNode.size(); i++) {
-		NastranNode& n = *(m_vNode[i]);
-		total_force += n.m_ForceVector;
+	for (int i = 0; i < nodes_.size(); i++) {
+		NastranNode& n = *(nodes_[i]);
+		total_force += n.force_vector_;
 	}
 
 	force = total_force;
