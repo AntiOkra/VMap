@@ -373,22 +373,22 @@ void CVectorMappingDlg::OnBnClickedOk()
 	nastran_model_.log_file_ = &LogFile;
 	surface_node_map_.log_file_ = &LogFile;
 
-	if (nastran_model_.ReadNastranFile(nastran_path_) != 0) {
+	if (nastran_model_.ReadModelFile(nastran_path_) != 0) {
 		AfxMessageBox(_T("Nastranファイル読み込めませんでした"));
 		return;
 	}
 
-	if (nastran_model_.ReadNormalVectorFile(normal_pressure_path_) != 0) {
+	if (nastran_model_.ReadNormalPressureFile(normal_pressure_path_) != 0) {
 		AfxMessageBox(_T("NormalPressureVectorファイル読み込めませんでした"));
 		return;
 	}
 
-	if (nastran_model_.ReadTangentVectorFile(tangent_pressure_path_) != 0) {
+	if (nastran_model_.ReadTangentPressureFile(tangent_pressure_path_) != 0) {
 		AfxMessageBox(_T("TangentPressureVectorファイル読み込めませんでした"));
 		return;
 	}
 
-	if (nastran_model_.ForceCalc() != 0) {
+	if (nastran_model_.CalculateForces() != 0) {
 		AfxMessageBox(_T("Nastranファイルの荷重を計算できませんでした"));
 		return;
 	}
@@ -405,7 +405,7 @@ void CVectorMappingDlg::OnBnClickedOk()
 	}
 
 	// Adxファイルの表面ノードを取得
-	if (adx_model_.ExtractSurfaceNode(v_name, surface_node_map_) != 0) {
+	if (adx_model_.ExtractSurfaceNodes(v_name, surface_node_map_) != 0) {
 		AfxMessageBox(_T("表面ノードを取得できませんでした"));
 		return;
 	}
@@ -450,7 +450,7 @@ void CVectorMappingDlg::OnBnClickedOk()
 
 	// Forceデータ出力
 	CString process = _T("TEST");
-	if (surface_node_map_.ExportAdxForce(force_output_path_,process) != 0) {
+	if (surface_node_map_.ExportAdxForces(force_output_path_,process) != 0) {
 		AfxMessageBox(_T("Forceファイル出力ができませんでした"));
 	}
 
@@ -458,7 +458,7 @@ void CVectorMappingDlg::OnBnClickedOk()
 
 	CMzPoint nastran_force;
 
-	nastran_model_.GetTotalForce(nastran_force);
+	nastran_model_.CalculateTotalForce(nastran_force);
 	buf.Format(_T("NASTRAN_FORCE:%10.3f,%10.3f,%10.3f\n"), nastran_force.x,nastran_force.y,nastran_force.z);
 	LogFile.WriteString(buf);
 
@@ -546,7 +546,7 @@ void CVectorMappingDlg::OnBnClickedButtonAdxread()
 	// LOCALE設定
 	setlocale(LC_CTYPE, "jpn");
 
-	adx_model_.RemoveAll();
+	adx_model_.Clear();
 
 	if (adx_model_.Read(adx_path_) == 0) {
 
@@ -663,22 +663,22 @@ bool CVectorMappingDlg::ValidateMappingInputs()
 
 int CVectorMappingDlg::LoadNastranInputs(NastranModel& nastran)
 {
-	if (nastran.ReadNastranFile(nastran_path_) != 0) {
+	if (nastran.ReadModelFile(nastran_path_) != 0) {
 		AfxMessageBox(_T("Nastranファイル読み込めませんでした"));
 		return 1;
 	}
 
-	if (nastran.ReadNormalVectorFile(normal_pressure_path_) != 0) {
+	if (nastran.ReadNormalPressureFile(normal_pressure_path_) != 0) {
 		AfxMessageBox(_T("NormalPressureVectorファイル読み込めませんでした"));
 		return 1;
 	}
 
-	if (nastran.ReadTangentVectorFile(tangent_pressure_path_) != 0) {
+	if (nastran.ReadTangentPressureFile(tangent_pressure_path_) != 0) {
 		AfxMessageBox(_T("TangentPressureVectorファイル読み込めませんでした"));
 		return 1;
 	}
 
-	if (nastran.ForceCalc() != 0) {
+	if (nastran.CalculateForces() != 0) {
 		AfxMessageBox(_T("Nastranファイルの荷重を計算できませんでした"));
 		return 1;
 	}
@@ -734,7 +734,7 @@ void CVectorMappingDlg::OnBnClickedButtonExec()
 	}
 
 	//　初期化
-	nastran_model_.RemoveAll();
+	nastran_model_.Clear();
 	surface_node_map_.Clear();
 
 	nastran_model_.log_file_ = &log_file_;
@@ -751,7 +751,7 @@ void CVectorMappingDlg::OnBnClickedButtonExec()
 	}
 
 	// Adxファイルの表面ノードを取得
-	if (adx_model_.ExtractSurfaceNode(v_name, surface_node_map_) != 0) {
+	if (adx_model_.ExtractSurfaceNodes(v_name, surface_node_map_) != 0) {
 		AfxMessageBox(_T("表面ノードを取得できませんでした"));
 		return;
 	}
@@ -771,7 +771,7 @@ void CVectorMappingDlg::OnBnClickedButtonExec()
 
 	// Forceデータ出力
 	CString process = _T("AdvcStep-99999");
-	if (surface_node_map_.ExportAdxForce(force_output_path_, process) != 0) {
+	if (surface_node_map_.ExportAdxForces(force_output_path_, process) != 0) {
 		AfxMessageBox(_T("Forceファイル出力ができませんでした"));
 		return;
 	}
@@ -780,17 +780,17 @@ void CVectorMappingDlg::OnBnClickedButtonExec()
 	CString n_path;
 	CString mod_str = _T("_N.csv");
 	ModFileName(nastran_path_, '.', mod_str, n_path);
-	nastran_model_.Dump_N(n_path);
+	nastran_model_.DumpNodes(n_path);
 
 	CString e_path;
 	mod_str = _T("_E.csv");
 	ModFileName(nastran_path_, '.', mod_str, e_path);
-	nastran_model_.Dump_E(e_path);
+	nastran_model_.DumpElements(e_path);
 
 	CString m_path;
 	mod_str = _T("_map.csv");
 	ModFileName(force_output_path_, '.', mod_str, m_path);
-	surface_node_map_.DumpNode(m_path);
+	surface_node_map_.DumpNodes(m_path);
 
 	CString buf;
 
@@ -814,7 +814,7 @@ void CVectorMappingDlg::OnBnClickedButtonExec()
 
 	CMzPoint nastran_force;
 
-	nastran_model_.GetTotalForce(nastran_force);
+	nastran_model_.CalculateTotalForce(nastran_force);
 	buf.Format(_T("NASTRAN_荷重(kN) (元)           :%10.3f,%10.3f,%10.3f\n"), nastran_force.x / 1000.0, nastran_force.y / 1000.0, nastran_force.z / 1000.0);
 	log_file_.WriteString(buf);
 
@@ -832,7 +832,7 @@ void CVectorMappingDlg::OnBnClickedButtonExec()
 
 	log_file_.Flush();
 
-	nastran_model_.RemoveAll();
+	nastran_model_.Clear();
 	surface_node_map_.Clear();
 
 	AfxMessageBox(_T("マッピング完了しました"));
@@ -904,7 +904,7 @@ void CVectorMappingDlg::OnBnClickedButtonForceCalc()
 
 	CMzPoint pam_force;
 
-	nas_test.GetTotalForce(pam_force);
+	nas_test.CalculateTotalForce(pam_force);
 
 	m_StrForceX.Format(_T("%11.3f"), pam_force.x / 1000.0);
 	m_StrForceY.Format(_T("%11.3f"), pam_force.y / 1000.0);

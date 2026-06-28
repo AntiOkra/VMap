@@ -30,20 +30,20 @@ public:
 	std::unordered_map<int, int>	element_id_to_index_;
 	std::map<CString, int>			element_set_name_to_index_;
 
-	void RemoveAll();
+	void Clear();
 	int Read(CString& fpath);
 	int Activate();
 
-	int ExportObj(CString& fpath, CStringArray& es_names);
-	int ExportSurfaceNode(CString& fpath, CStringArray& es_names);
+	int ExportObjFile(CString& fpath, CStringArray& es_names);
+	int ExportSurfaceNodes(CString& fpath, CStringArray& es_names);
 
 	bool IsEmpty();
 
-	bool FaceExist(int& s, int& c, int& e, int& face_index);
-	int  SurfaceExtract(CString& es_name, std::vector<int>& vnode, std::vector<int>& vef);
-	int  ExtractSurfaceNode(CStringArray& es_names, SurfaceNodeMap& surface_node);
-	int  ElementSetInf(CString& nodeset_line, CString& name, int& id, CString& comment);
-	int  SortElementSet();
+	bool FindExistingFace(int& s, int& c, int& e, int& face_index);
+	int  ExtractSurfaceFaces(CString& es_name, std::vector<int>& vnode, std::vector<int>& vef);
+	int  ExtractSurfaceNodes(CStringArray& es_names, SurfaceNodeMap& surface_node);
+	int  ParseElementSetInfo(CString& nodeset_line, CString& name, int& id, CString& comment);
+	int  SortElementSets();
 };
 
 bool CompareAdxElementSet(AdxElementSet* e1, AdxElementSet* e2);

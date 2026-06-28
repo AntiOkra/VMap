@@ -29,7 +29,7 @@ int IncludeFilePath( CString& parent_path, CString& include_file, CString& inclu
 //
 // element_set = Body_2_PID1_e8  #Body_2
 //
-int AdxModel::ElementSetInf(CString& nodeset_line, CString& name, int& id, CString& comment)
+int AdxModel::ParseElementSetInfo(CString& nodeset_line, CString& name, int& id, CString& comment)
 {
 	id = 0;
 	comment = "";
@@ -233,7 +233,7 @@ int AdxModel::Read(CString& fpath)
 				CString tmp_name;
 				CString tmp_comment;
 				int     tmp_id;
-				ElementSetInf(line, tmp_name, tmp_id, tmp_comment);
+				ParseElementSetInfo(line, tmp_name, tmp_id, tmp_comment);
 				crnt_element_set->adx_name_ = tmp_name;
 				crnt_element_set->user_name_ = tmp_comment;
 				crnt_element_set->id_ = tmp_id;
@@ -273,7 +273,7 @@ int AdxModel::Read(CString& fpath)
 	return 0;
 }
 
-void AdxModel::RemoveAll()
+void AdxModel::Clear()
 {
 	node_sets_.clear();
 	nodes_.clear();
@@ -343,7 +343,7 @@ int AdxModel::Activate()
 				n_index[k] = e.node_indices_[cElementFaceIndex[j][k]];
 			}
 
-			if (FaceExist(n_index[0], n_index[1], n_index[2], face_index)) {
+			if (FindExistingFace(n_index[0], n_index[1], n_index[2], face_index)) {
 				AdxElementFace& ef = *(element_faces_[face_index]);
 				ef.back_element_index_ = i;
 				e.face_indices_[j] = face_index;
@@ -373,7 +373,7 @@ int AdxModel::Activate()
 	return 0;
 }
 // 同一の３ノードで構成される面が既にあるか確認する
-bool AdxModel::FaceExist(int& s, int& c, int& e, int& face_index)
+bool AdxModel::FindExistingFace(int& s, int& c, int& e, int& face_index)
 {
 	face_index = -1;
 
@@ -400,7 +400,7 @@ bool AdxModel::FaceExist(int& s, int& c, int& e, int& face_index)
 	return face_exist;
 }
 
-int AdxModel::SurfaceExtract(CString& es_name, std::vector<int>& vnode, std::vector<int>& vef)
+int AdxModel::ExtractSurfaceFaces(CString& es_name, std::vector<int>& vnode, std::vector<int>& vef)
 {
 	vnode.clear();
 	vef.clear();
@@ -447,7 +447,7 @@ int AdxModel::SurfaceExtract(CString& es_name, std::vector<int>& vnode, std::vec
 	return 0;
 }
 
-int AdxModel::ExportObj(CString& opath, CStringArray& es_names)
+int AdxModel::ExportObjFile(CString& opath, CStringArray& es_names)
 {
 	BOOL			ret;
 	CStdioFile		oFile;
@@ -463,7 +463,7 @@ int AdxModel::ExportObj(CString& opath, CStringArray& es_names)
 		std::vector<int> tmp_vef;
 
 		CString name_element_set = es_names[i];
-		SurfaceExtract(name_element_set, tmp_vnode, tmp_vef);
+		ExtractSurfaceFaces(name_element_set, tmp_vnode, tmp_vef);
 
 		std::copy(tmp_vnode.begin(), tmp_vnode.end(), std::back_inserter(vnode));
 		std::copy(tmp_vef.begin(), tmp_vef.end(), std::back_inserter(vef));
@@ -501,7 +501,7 @@ int AdxModel::ExportObj(CString& opath, CStringArray& es_names)
 }
 
 
-int AdxModel::ExportSurfaceNode(CString& opath, CStringArray& es_names)
+int AdxModel::ExportSurfaceNodes(CString& opath, CStringArray& es_names)
 {
 	BOOL			ret;
 	CStdioFile		oFile;
@@ -521,7 +521,7 @@ int AdxModel::ExportSurfaceNode(CString& opath, CStringArray& es_names)
 		std::vector<int> vnode;
 		std::vector<int> vef;
 
-		SurfaceExtract(name_element_set, vnode, vef);
+		ExtractSurfaceFaces(name_element_set, vnode, vef);
 
 		// ノード Index　変換テーブル
 		std::map<int, int> map_index;
@@ -557,7 +557,7 @@ bool AdxModel::IsEmpty()
 	}
 }
 
-int AdxModel::ExtractSurfaceNode(CStringArray& es_names, SurfaceNodeMap& surface_node)
+int AdxModel::ExtractSurfaceNodes(CStringArray& es_names, SurfaceNodeMap& surface_node)
 {
 	std::map<int, int> map_node_index;
 
@@ -569,7 +569,7 @@ int AdxModel::ExtractSurfaceNode(CStringArray& es_names, SurfaceNodeMap& surface
 		std::vector<int> vnode;
 		std::vector<int> vef;
 
-		SurfaceExtract(name_element_set, vnode, vef);
+		ExtractSurfaceFaces(name_element_set, vnode, vef);
 
 		// ノード追加
 		for (int i = 0; i < vnode.size(); i++) {
@@ -593,7 +593,7 @@ int AdxModel::ExtractSurfaceNode(CStringArray& es_names, SurfaceNodeMap& surface
 	return 0;
 }
 
-int AdxModel::SortElementSet()
+int AdxModel::SortElementSets()
 {
 	return 0;
 }

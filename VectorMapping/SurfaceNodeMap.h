@@ -22,11 +22,11 @@ public:
 
 	int MapForces(NastranModel& nastran, double upper_limit, CMzPoint ratio);
 	int FindNearestNode(CMzPoint& point, double upper_limit, AdxNode** node, double& distance);
-	int FindNearestNodeBruteForce(CMzPoint& point, double upper_limit, AdxNode** node, double& distance);
+	int FindNearestNodeByBruteForce(CMzPoint& point, double upper_limit, AdxNode** node, double& distance);
 	int BuildSpatialGrid();
-	int ExportAdxForce(CString& fpath, CString& process);
-	void LogWrite(CString &msg);
-	int DumpNode(CString& fpath);
+	int ExportAdxForces(CString& fpath, CString& process);
+	void WriteLog(CString &msg);
+	int DumpNodes(CString& fpath);
 	int Dump(CString& fpath);
 	void Clear();
 };

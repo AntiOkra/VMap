@@ -59,19 +59,19 @@ public:
 
 	CStdioFile*				log_file_;
 	
-	void RemoveAll();
-	int  ReadNastranFile(const CString& fpath);
-	int ReadNormalVectorFile(const CString& fpath);		// Nastran deha nai kedo
-	int ReadTangentVectorFile(const CString& fpath);	// Nastran deha nai kedo
+	void Clear();
+	int  ReadModelFile(const CString& fpath);
+	int ReadNormalPressureFile(const CString& fpath);		// Nastran deha nai kedo
+	int ReadTangentPressureFile(const CString& fpath);	// Nastran deha nai kedo
 	bool IsEmpty();
-	int  GetTotalForce(CMzPoint& force);
+	int  CalculateTotalForce(CMzPoint& force);
 
-	void LogWrite(CString &msg);
-	int  Dump_N(CString& fpath);
-	int  Dump_E(CString& fpath);
+	void WriteLog(CString &msg);
+	int  DumpNodes(CString& fpath);
+	int  DumpElements(CString& fpath);
 
 	int  Indexing();
-	int  ForceCalc();
+	int  CalculateForces();
 
 
 };

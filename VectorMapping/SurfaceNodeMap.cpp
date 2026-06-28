@@ -47,15 +47,15 @@ int SurfaceNodeMap::MapForces(NastranModel& nastran, double upper_limit, CMzPoin
 
 			if (rc_m == rc_s && distance_m == distance_s && p_node_m == p_node_s) {
 				msg = _T("NearestNode Same Result\n");
-				LogWrite(msg);
+				WriteLog(msg);
 			}
 			else {
 				msg = _T("NearestNode Not Same Result\n");
-				LogWrite(msg);
+				WriteLog(msg);
 				msg.Format(_T("rc_m(%d) no(%16x) distance_m(%10.3f)"), rc_m, p_node_m, distance_m);
-				LogWrite(msg);
+				WriteLog(msg);
 				msg.Format(_T("rc_s(%d) no(%16x) distance_s(%10.3f)"), rc_s, p_node_s, distance_s);
-				LogWrite(msg);
+				WriteLog(msg);
 			}
 		}
 		*/
@@ -68,7 +68,7 @@ int SurfaceNodeMap::MapForces(NastranModel& nastran, double upper_limit, CMzPoin
 
 		if (FindNearestNode(n.coord_, upper_limit, &p_node, distance) == 0) {
 			// msg.Format(_T("PAIR_EXIST Nastran_Node(%d) ADX_NODE(%d) DST(%10.3f)\n"), n.id_,p_node->id_,distance);
-			// LogWrite(msg);
+			// WriteLog(msg);
 			p_node->force_vector_ += map_force;
 			mapped_force_ += map_force;
 		}
@@ -80,7 +80,7 @@ int SurfaceNodeMap::MapForces(NastranModel& nastran, double upper_limit, CMzPoin
 			else {
 				msg.Format(_T("PAIR_NOT_EXIST Nastran_Node(%d) ADX_NODE(%d) DST(%10.3f)\n"), n.id_, p_node->id_,distance);
 			}
-			LogWrite(msg);
+			WriteLog(msg);
 			*/
 			loss_force_ += map_force;
 		}
@@ -89,7 +89,7 @@ int SurfaceNodeMap::MapForces(NastranModel& nastran, double upper_limit, CMzPoin
 	return 0;
 }
 
-int SurfaceNodeMap::FindNearestNodeBruteForce(CMzPoint& point, double upper_limit, AdxNode** node, double& distance)
+int SurfaceNodeMap::FindNearestNodeByBruteForce(CMzPoint& point, double upper_limit, AdxNode** node, double& distance)
 {
 	*node = NULL;
 	distance = 1E100;
@@ -175,7 +175,7 @@ int SurfaceNodeMap::FindNearestNode(CMzPoint& point, double upper_limit, AdxNode
 	}
 }
 
-int SurfaceNodeMap::ExportAdxForce(CString& opath, CString& process)
+int SurfaceNodeMap::ExportAdxForces(CString& opath, CString& process)
 {
 	BOOL			ret;
 	CStdioFile		oFile;
@@ -216,7 +216,7 @@ int SurfaceNodeMap::ExportAdxForce(CString& opath, CString& process)
 	return 0;
 }
 
-void SurfaceNodeMap::LogWrite(CString& msg)
+void SurfaceNodeMap::WriteLog(CString& msg)
 {
 	if (log_file_ != NULL) {
 		log_file_->WriteString(msg);
@@ -224,7 +224,7 @@ void SurfaceNodeMap::LogWrite(CString& msg)
 }
 
 
-int SurfaceNodeMap::DumpNode(CString& fpath)
+int SurfaceNodeMap::DumpNodes(CString& fpath)
 {
 	BOOL			ret;
 	CStdioFile		oFile;
