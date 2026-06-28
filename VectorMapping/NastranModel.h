@@ -5,44 +5,8 @@
 #include<unordered_map>
 #include<memory>
 
-#include"MzPoint.h"
-
-enum class NastranElementType { Triangle, Quad, Beam };
-
-class NastranNode
-{
-public:
-	NastranNode();
-	~NastranNode();
-
-	int id_;
-	CMzPoint coord_;					// ノード座標値
-
-	CMzPoint normal_pressure_vector_;	// 法線方向圧力ベクトル
-	CMzPoint tangent_pressure_vector_;	// 接線方向圧力ベクトル
-	CMzPoint pressure_vector_;			// PressureVector = NormalPressureVector + TangentPressureVector
-	CMzPoint force_vector_;				// ForceVector = PressureVector * Area
-	double	 area_;					// ノード面積(仮想的なもの)
-
-	//int Read(CStringArray& words);
-	int Read(CString& line1, CString& line2);
-};
-
-class NastranElement
-{
-public:
-	NastranElement();
-	~NastranElement();
-
-	int id_;
-
-	NastranElementType type_;
-	int node_ids_[4];
-	int node_indices_[4];
-	double area_;
-
-	int Read(const CString& line);
-};
+#include "NastranNode.h"
+#include "NastranElement.h"
 
 class NastranModel
 {

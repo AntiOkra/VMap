@@ -187,11 +187,14 @@
   <ItemGroup>
     <ClInclude Include="AdxModel.h" />
     <ClInclude Include="AdxElement.h" />
+    <ClInclude Include="AdxElementFace.h" />
     <ClInclude Include="AdxElementSet.h" />
     <ClInclude Include="AdxNode.h" />
     <ClInclude Include="AdxNodeSet.h" />
     <ClInclude Include="SpatialGrid.h" />
     <ClInclude Include="NastranModel.h" />
+    <ClInclude Include="NastranNode.h" />
+    <ClInclude Include="NastranElement.h" />
     <ClInclude Include="GeneralFunction.h" />
     <ClInclude Include="MzPoint.h" />
     <ClInclude Include="Resource.h" />
@@ -205,11 +208,14 @@
   <ItemGroup>
     <ClCompile Include="AdxModel.cpp" />
     <ClCompile Include="AdxElement.cpp" />
+    <ClCompile Include="AdxElementFace.cpp" />
     <ClCompile Include="AdxElementSet.cpp" />
     <ClCompile Include="AdxNode.cpp" />
     <ClCompile Include="AdxNodeSet.cpp" />
     <ClCompile Include="SpatialGrid.cpp" />
     <ClCompile Include="NastranModel.cpp" />
+    <ClCompile Include="NastranNode.cpp" />
+    <ClCompile Include="NastranElement.cpp" />
     <ClCompile Include="GeneralFunction.cpp" />
     <ClCompile Include="SortParameter.cpp" />
     <ClCompile Include="stdafx.cpp">

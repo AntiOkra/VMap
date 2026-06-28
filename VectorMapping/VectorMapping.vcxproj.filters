@@ -39,6 +39,9 @@
     <ClInclude Include="AdxElement.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="AdxElementFace.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
     <ClInclude Include="AdxElementSet.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
@@ -52,6 +55,12 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="NastranModel.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="NastranNode.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="NastranElement.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="GeneralFunction.h">
@@ -83,6 +92,9 @@
     <ClCompile Include="AdxElement.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="AdxElementFace.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
     <ClCompile Include="AdxElementSet.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
@@ -96,6 +108,12 @@
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="NastranModel.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="NastranNode.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="NastranElement.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="GeneralFunction.cpp">

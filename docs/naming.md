@@ -59,3 +59,4 @@ This project is moving from legacy MFC-style names to a smaller modern C++ style
 - `v0.6.0`: Renamed domain methods to clearer verb phrases while leaving MFC event handlers in their generated style.
 - `v0.7.0`: Hid model-owned containers behind accessors and split Nastran reading/force calculation into private helpers.
 - `v0.8.0`: Converted Nastran element types to `enum class` and split ADX state-machine parsing into private helpers.
+- `v0.9.0`: Split multi-class headers and sources so model, element, node, and face classes live in focused file pairs.
