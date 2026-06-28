@@ -2,18 +2,18 @@
 #include "SurfaceNode.h"
 
 
-CSurfaceNode::CSurfaceNode()
+SurfaceNodeMap::SurfaceNodeMap()
 {
 	m_MappedForce.Set(0.0, 0.0, 0.0);
 	m_LossForce.Set(0.0, 0.0, 0.0);
 }
 
-CSurfaceNode::~CSurfaceNode()
+SurfaceNodeMap::~SurfaceNodeMap()
 {
 	 spatial_grid_.Clear();
 }
 
-int CSurfaceNode::BuildSpatialGrid()
+int SurfaceNodeMap::BuildSpatialGrid()
 {
 	if (nodes_.empty()) {
 		return 1;
@@ -24,23 +24,23 @@ int CSurfaceNode::BuildSpatialGrid()
 	return 0;
 }
 
-int CSurfaceNode::MapForces(CNastran& nastran, double upper_limit, CMzPoint ratio)
+int SurfaceNodeMap::MapForces(NastranModel& nastran, double upper_limit, CMzPoint ratio)
 {
-	CAdxNode* p_node=NULL;
+	AdxNode* p_node=NULL;
 	double distance;
 	CString msg;
 
 	for (int i = 0; i < nastran.m_vNode.size(); i++) {
-		CNastranNode& n = *(nastran.m_vNode[i]);
+		NastranNode& n = *(nastran.m_vNode[i]);
 
 		/* Check Code
 		{
-			CAdxNode *p_node_m;
+			AdxNode *p_node_m;
 			double   distance_m;
 			int      rc_m;
 			rc_m = NearestNode(n.m_Coord, upper_limit, &p_node_m, distance_m);
 
-			CAdxNode *p_node_s;
+			AdxNode *p_node_s;
 			double   distance_s;
 			int      rc_s;
 			rc_s = NearestNode(n.m_Coord, upper_limit, &p_node_s, distance_s);
@@ -89,7 +89,7 @@ int CSurfaceNode::MapForces(CNastran& nastran, double upper_limit, CMzPoint rati
 	return 0;
 }
 
-int CSurfaceNode::FindNearestNodeBruteForce(CMzPoint& point, double upper_limit, CAdxNode** node, double& distance)
+int SurfaceNodeMap::FindNearestNodeBruteForce(CMzPoint& point, double upper_limit, AdxNode** node, double& distance)
 {
 	*node = NULL;
 	distance = 1E100;
@@ -97,10 +97,10 @@ int CSurfaceNode::FindNearestNodeBruteForce(CMzPoint& point, double upper_limit,
 	double upper_limit2 = upper_limit*upper_limit;
 	bool exist_node = false;
 	double min_dst2 = 1E100;
-	CAdxNode *p_nearest_node = NULL;
+	AdxNode *p_nearest_node = NULL;
 
 	for (int i = 0; i < nodes_.size(); i++) {
-		CAdxNode& n = *(nodes_[i]);
+		AdxNode& n = *(nodes_[i]);
 		double tmp_dst2 = n.m_Coord.DistanceSquared(point);
 		if (tmp_dst2 < min_dst2) {
 			min_dst2 = tmp_dst2;
@@ -121,7 +121,7 @@ int CSurfaceNode::FindNearestNodeBruteForce(CMzPoint& point, double upper_limit,
 }
 
 
-int CSurfaceNode::FindNearestNode(CMzPoint& point, double upper_limit, CAdxNode** node, double& distance)
+int SurfaceNodeMap::FindNearestNode(CMzPoint& point, double upper_limit, AdxNode** node, double& distance)
 {
 	*node = NULL;
 	distance = 1E100;
@@ -133,10 +133,10 @@ int CSurfaceNode::FindNearestNode(CMzPoint& point, double upper_limit, CAdxNode*
 	// 前後を含む3index分を検索
 	bool exist_node = false;
 	double min_dst = 1E100;
-	CAdxNode *p_nearest_node = NULL;
+	AdxNode *p_nearest_node = NULL;
 
 	int area_index;
-	CAdxNode *tmp_node = NULL;
+	AdxNode *tmp_node = NULL;
 	double tmp_dst = 0.0;
 
 	for (int ix = ax - 1; ix <= ax + 1; ix++) {
@@ -175,7 +175,7 @@ int CSurfaceNode::FindNearestNode(CMzPoint& point, double upper_limit, CAdxNode*
 	}
 }
 
-int CSurfaceNode::ExportAdxForce(CString& opath, CString& process)
+int SurfaceNodeMap::ExportAdxForce(CString& opath, CString& process)
 {
 	BOOL			ret;
 	CStdioFile		oFile;
@@ -199,7 +199,7 @@ int CSurfaceNode::ExportAdxForce(CString& opath, CString& process)
 
 	// データ部
 	for (int i = 0; i < nodes_.size(); i++) {
-		CAdxNode& n = *(nodes_[i]);
+		AdxNode& n = *(nodes_[i]);
 
 		if (n.m_ForceVector.x != 0.0 || n.m_ForceVector.y != 0.0 || n.m_ForceVector.z != 0.0) {
 			buf.Format(_T("%8d 0 %12.6f\n"), n.m_ID, n.m_ForceVector.x);
@@ -216,7 +216,7 @@ int CSurfaceNode::ExportAdxForce(CString& opath, CString& process)
 	return 0;
 }
 
-void CSurfaceNode::LogWrite(CString& msg)
+void SurfaceNodeMap::LogWrite(CString& msg)
 {
 	if (m_LogFile != NULL) {
 		m_LogFile->WriteString(msg);
@@ -224,7 +224,7 @@ void CSurfaceNode::LogWrite(CString& msg)
 }
 
 
-int CSurfaceNode::DumpNode(CString& fpath)
+int SurfaceNodeMap::DumpNode(CString& fpath)
 {
 	BOOL			ret;
 	CStdioFile		oFile;
@@ -239,7 +239,7 @@ int CSurfaceNode::DumpNode(CString& fpath)
 	oFile.WriteString(buf);
 	
 	for (int i = 0; i < nodes_.size(); i++) {
-		CAdxNode& n = *(nodes_[i]);
+		AdxNode& n = *(nodes_[i]);
 		buf.Format(_T("%8d,%12.6f,%12.6f,%12.6f,%12.6f,%12.6f,%12.6f\n"), n.m_ID, n.m_Coord.x, n.m_Coord.y, n.m_Coord.z, n.m_ForceVector.x, n.m_ForceVector.y, n.m_ForceVector.z);
 		oFile.WriteString(buf);
 	}
@@ -250,7 +250,7 @@ int CSurfaceNode::DumpNode(CString& fpath)
 }
 
 
-int CSurfaceNode::Dump(CString& fpath)
+int SurfaceNodeMap::Dump(CString& fpath)
 {
 	BOOL			ret;
 	CStdioFile		oFile;
@@ -277,7 +277,7 @@ int CSurfaceNode::Dump(CString& fpath)
 
 					SpatialGridCell& a = spatial_grid_.cells_[array_index];
 					for (int l = 0; l < a.nodes_.size(); l++) {
-						CAdxNode&n = *(a.nodes_[l]);
+						AdxNode&n = *(a.nodes_[l]);
 						buf.Format(_T("ID(%d) X:%10.3f, Y:%10.3f, Z:%10.3f"), n.m_ID, n.m_Coord.x, n.m_Coord.y, n.m_Coord.z);
 						oFile.WriteString(buf);
 					}
@@ -296,7 +296,7 @@ int CSurfaceNode::Dump(CString& fpath)
 	return 0;
 }
 
-void CSurfaceNode::Clear()
+void SurfaceNodeMap::Clear()
 {
 	nodes_.clear();
 

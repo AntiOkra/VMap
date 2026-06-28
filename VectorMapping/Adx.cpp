@@ -5,12 +5,12 @@
 #include <regex>
 
 
-CAdx::CAdx()
+AdxModel::AdxModel()
 {
 }
 
 
-CAdx::~CAdx()
+AdxModel::~AdxModel()
 {
 }
 
@@ -29,7 +29,7 @@ int IncludeFilePath( CString& parent_path, CString& include_file, CString& inclu
 //
 // element_set = Body_2_PID1_e8  #Body_2
 //
-int CAdx::ElementSetInf(CString& nodeset_line, CString& name, int& id, CString& comment)
+int AdxModel::ElementSetInf(CString& nodeset_line, CString& name, int& id, CString& comment)
 {
 	id = 0;
 	comment = "";
@@ -76,7 +76,7 @@ int CAdx::ElementSetInf(CString& nodeset_line, CString& name, int& id, CString& 
 	return 0;
 }
 
-int CAdx::Read(CString& fpath)
+int AdxModel::Read(CString& fpath)
 {
 	CStdioFile		cFile;
 	BOOL			ret=FALSE;
@@ -86,10 +86,10 @@ int CAdx::Read(CString& fpath)
 	int				rc=0;
 	bool			is_eof = false;
 	bool			re_parse = false;
-	std::unique_ptr<CAdxNodeSet>		crnt_node_set;
-	std::unique_ptr<CAdxElementSet>	crnt_element_set;
-	std::unique_ptr<CAdxElement>		crnt_element;
-	std::unique_ptr<CAdxNode>			crnt_node;
+	std::unique_ptr<AdxNodeSet>		crnt_node_set;
+	std::unique_ptr<AdxElementSet>	crnt_element_set;
+	std::unique_ptr<AdxElement>		crnt_element;
+	std::unique_ptr<AdxNode>			crnt_node;
 	enum adx_state { None, Node, Element } crnt_state;
 
 	// RemoveAll();
@@ -179,7 +179,7 @@ int CAdx::Read(CString& fpath)
 
 			// node_set
 			if (words[0] == "node_set") {
-				crnt_node_set.reset(new CAdxNodeSet);
+				crnt_node_set.reset(new AdxNodeSet);
 				crnt_node_set->m_NameAdx = words[1];
 				continue;
 			}
@@ -200,7 +200,7 @@ int CAdx::Read(CString& fpath)
 			}
 
 			// node data
-			crnt_node.reset(new CAdxNode);
+			crnt_node.reset(new AdxNode);
 			crnt_node->Read(words);
 			m_vNode.push_back(std::move(crnt_node));
 
@@ -229,7 +229,7 @@ int CAdx::Read(CString& fpath)
 
 			// element_set
 			if (words[0] == "element_set") {
-				crnt_element_set.reset(new CAdxElementSet);
+				crnt_element_set.reset(new AdxElementSet);
 				CString tmp_name;
 				CString tmp_comment;
 				int     tmp_id;
@@ -256,7 +256,7 @@ int CAdx::Read(CString& fpath)
 			}
 
 			// element_data
-			crnt_element.reset(new CAdxElement);
+			crnt_element.reset(new AdxElement);
 			crnt_element->Read(words);
 			m_vElement.push_back(std::move(crnt_element));
 
@@ -273,7 +273,7 @@ int CAdx::Read(CString& fpath)
 	return 0;
 }
 
-void CAdx::RemoveAll()
+void AdxModel::RemoveAll()
 {
 	m_vNodeSet.clear();
 	m_vNode.clear();
@@ -288,7 +288,7 @@ void CAdx::RemoveAll()
 }
 
 //
-int CAdx::Activate()
+int AdxModel::Activate()
 {
 	m_mNodeIDtoIndex.clear();
 	m_mElementIDtoIndex.clear();
@@ -296,21 +296,21 @@ int CAdx::Activate()
 
 	// NodeMap作成
 	for (int i = 0; i < static_cast<int>(m_vNode.size()); i++) {
-		CAdxNode& n = *(m_vNode[i]);
+		AdxNode& n = *(m_vNode[i]);
 		n.m_ElementFaceIndex.clear();
-		n.m_Type = Undefined;
+		n.m_Type = UndefinedNode;
 		m_mNodeIDtoIndex[n.m_ID] = i;
 	}
 
 	// ElementMap作成
 	for (int i = 0; i < static_cast<int>(m_vElement.size()); i++) {
-		CAdxElement& e = *(m_vElement[i]);
+		AdxElement& e = *(m_vElement[i]);
 		m_mElementIDtoIndex[e.m_ID] = i;
 	}
 
 	// Element 内 Node_Index set
 	for (int i = 0; i < static_cast<int>(m_vElement.size()); i++) {
-		CAdxElement& e = *(m_vElement[i]);
+		AdxElement& e = *(m_vElement[i]);
 
 		for (int j = 0; j < 10; j++) {
 			auto node_it = m_mNodeIDtoIndex.find(e.m_NodeID[j]);
@@ -322,11 +322,11 @@ int CAdx::Activate()
 
 		for (int j = 0; j < 4; j++) {
 			int index_node = e.m_NodeIndex[j];
-			m_vNode[index_node]->SetType(Node_1st);
+			m_vNode[index_node]->SetType(CornerNode);
 		}
 		for (int j = 4; j < 10; j++) {
 			int index_node = e.m_NodeIndex[j];
-			m_vNode[index_node]->SetType(Node_2nd);
+			m_vNode[index_node]->SetType(MidSideNode);
 		}
 	}
 
@@ -335,7 +335,7 @@ int CAdx::Activate()
 	int face_index = -1;
 	for (int i = 0; i < static_cast<int>(m_vElement.size()); i++) {
 
-		CAdxElement& e = *(m_vElement[i]);
+		AdxElement& e = *(m_vElement[i]);
 
 		for (int j = 0; j < 4; j++) {
 
@@ -344,15 +344,15 @@ int CAdx::Activate()
 			}
 
 			if (FaceExist(n_index[0], n_index[1], n_index[2], face_index)) {
-				CAdxElementFace& ef = *(m_vElementFace[face_index]);
+				AdxElementFace& ef = *(m_vElementFace[face_index]);
 				ef.m_BackElementIndex = i;
 				e.m_FaceIndex[j] = face_index;
 			}
 			else {
 
 				// Face生成
-				std::unique_ptr<CAdxElementFace> new_face;
-				new_face.reset(new CAdxElementFace(n_index, i));
+				std::unique_ptr<AdxElementFace> new_face;
+				new_face.reset(new AdxElementFace(n_index, i));
 
 				// Adxに登録
 				m_vElementFace.push_back(std::move(new_face));
@@ -364,7 +364,7 @@ int CAdx::Activate()
 				// Nodeに登録
 				int v0, v1, v2;
 				num3sort(n_index[0], n_index[1], n_index[2], v0, v1, v2);
-				CAdxNode& n = *(m_vNode[v0]);
+				AdxNode& n = *(m_vNode[v0]);
 				n.m_ElementFaceIndex.push_back(new_face_index);
 			}
 		}
@@ -373,7 +373,7 @@ int CAdx::Activate()
 	return 0;
 }
 // 同一の３ノードで構成される面が既にあるか確認する
-bool CAdx::FaceExist(int& s, int& c, int& e, int& face_index)
+bool AdxModel::FaceExist(int& s, int& c, int& e, int& face_index)
 {
 	face_index = -1;
 
@@ -384,12 +384,12 @@ bool CAdx::FaceExist(int& s, int& c, int& e, int& face_index)
 	num3sort(s, c, e, v0, v1, v2);
 
 	// 最小インデクスのノードを頂点に持つ面とマッチング
-	CAdxNode& dst_node = *(m_vNode[v0]);
+	AdxNode& dst_node = *(m_vNode[v0]);
 
 	bool face_exist = false;
 
 	for (int i = 0;i < dst_node.m_ElementFaceIndex.size(); i++) {
-		CAdxElementFace& ef = *(m_vElementFace[dst_node.m_ElementFaceIndex[i]]);
+		AdxElementFace& ef = *(m_vElementFace[dst_node.m_ElementFaceIndex[i]]);
 		if (ef.m_NodeVertexSorted[0] == v0 && ef.m_NodeVertexSorted[1] == v1 && ef.m_NodeVertexSorted[2] == v2) {
 			face_exist = true;
 			face_index = dst_node.m_ElementFaceIndex[i];
@@ -400,7 +400,7 @@ bool CAdx::FaceExist(int& s, int& c, int& e, int& face_index)
 	return face_exist;
 }
 
-int CAdx::SurfaceExtract(CString& es_name, std::vector<int>& vnode, std::vector<int>& vef)
+int AdxModel::SurfaceExtract(CString& es_name, std::vector<int>& vnode, std::vector<int>& vef)
 {
 	vnode.clear();
 	vef.clear();
@@ -408,7 +408,7 @@ int CAdx::SurfaceExtract(CString& es_name, std::vector<int>& vnode, std::vector<
 	// Search
 	int index = -1;
 	for (int i = 0; i < m_vElementSet.size(); i++) {
-		CAdxElementSet& es = *(m_vElementSet[i]);
+		AdxElementSet& es = *(m_vElementSet[i]);
 		if (es.m_NameAdx == es_name) {
 			index = i;
 			break;
@@ -419,13 +419,13 @@ int CAdx::SurfaceExtract(CString& es_name, std::vector<int>& vnode, std::vector<
 	}
 
 	// 表面Faceのみピックアップ
-	CAdxElementSet& es = *(m_vElementSet[index]);
+	AdxElementSet& es = *(m_vElementSet[index]);
 	for (int i = 0; i < es.m_vElementIndex.size(); i++) {
 		int element_index = es.m_vElementIndex[i];
-		CAdxElement& e = *(m_vElement[element_index]);
+		AdxElement& e = *(m_vElement[element_index]);
 		for (int k = 0; k < 4; k++) {
 			int face_index = e.m_FaceIndex[k];
-			CAdxElementFace& ef = *(m_vElementFace[face_index]);
+			AdxElementFace& ef = *(m_vElementFace[face_index]);
 			if (ef.m_BackElementIndex == -1) {
 				vef.push_back(face_index);
 			}
@@ -435,7 +435,7 @@ int CAdx::SurfaceExtract(CString& es_name, std::vector<int>& vnode, std::vector<
 	// 表面Faceのノードリスト作成
 	std::map<int, int> map_node;
 	for (int i = 0; i < vef.size(); i++) {
-		CAdxElementFace& ef = *(m_vElementFace[vef[i]]);
+		AdxElementFace& ef = *(m_vElementFace[vef[i]]);
 		for (int j = 0; j < 6; j++) {
 			map_node[ef.m_NodeIndex[j]] = vef[i];
 		}
@@ -447,7 +447,7 @@ int CAdx::SurfaceExtract(CString& es_name, std::vector<int>& vnode, std::vector<
 	return 0;
 }
 
-int CAdx::ExportObj(CString& opath, CStringArray& es_names)
+int AdxModel::ExportObj(CString& opath, CStringArray& es_names)
 {
 	BOOL			ret;
 	CStdioFile		oFile;
@@ -483,14 +483,14 @@ int CAdx::ExportObj(CString& opath, CStringArray& es_names)
 
 	// ノード出力
 	for (int i = 0; i < vnode.size(); i++) {
-		CAdxNode& n = *(m_vNode[vnode[i]]);
+		AdxNode& n = *(m_vNode[vnode[i]]);
 		buf.Format(_T("v %10.3f %10.3f %10.3f\n"), n.m_Coord.x, n.m_Coord.y, n.m_Coord.z);
 		oFile.WriteString(buf);
 	}
 
 	// 面要素出力
 	for (int i = 0; i < vef.size(); i++) {
-		CAdxElementFace& ef = *(m_vElementFace[vef[i]]);
+		AdxElementFace& ef = *(m_vElementFace[vef[i]]);
 		buf.Format(_T("f %8d %8d %8d\n"), map_index[ef.m_NodeIndex[0]], map_index[ef.m_NodeIndex[1]], map_index[ef.m_NodeIndex[2]]);
 		oFile.WriteString(buf);
 	}
@@ -501,7 +501,7 @@ int CAdx::ExportObj(CString& opath, CStringArray& es_names)
 }
 
 
-int CAdx::ExportSurfaceNode(CString& opath, CStringArray& es_names)
+int AdxModel::ExportSurfaceNode(CString& opath, CStringArray& es_names)
 {
 	BOOL			ret;
 	CStdioFile		oFile;
@@ -535,7 +535,7 @@ int CAdx::ExportSurfaceNode(CString& opath, CStringArray& es_names)
 
 		// ノード出力
 		for (int i = 0; i < vnode.size(); i++) {
-			CAdxNode& n = *(m_vNode[vnode[i]]);
+			AdxNode& n = *(m_vNode[vnode[i]]);
 			buf.Format(_T("%8d,%10.3f,%10.3f,%10.3f\n"),n.m_ID, n.m_Coord.x, n.m_Coord.y, n.m_Coord.z);
 			oFile.WriteString(buf);
 		}
@@ -547,7 +547,7 @@ int CAdx::ExportSurfaceNode(CString& opath, CStringArray& es_names)
 	return 0;
 }
 
-bool CAdx::IsEmpty()
+bool AdxModel::IsEmpty()
 {
 	if (m_vNode.size() > 0) {
 		return false;
@@ -557,7 +557,7 @@ bool CAdx::IsEmpty()
 	}
 }
 
-int CAdx::ExtractSurfaceNode(CStringArray& es_names, CSurfaceNode& surface_node)
+int AdxModel::ExtractSurfaceNode(CStringArray& es_names, SurfaceNodeMap& surface_node)
 {
 	std::map<int, int> map_node_index;
 
@@ -582,8 +582,8 @@ int CAdx::ExtractSurfaceNode(CStringArray& es_names, CSurfaceNode& surface_node)
 		int adx_node_index = x.first;
 
 		// 2次ノードのみ抽出
-		//if (m_vNode[adx_node_index]->m_Type == Node_2nd) {
-			std::unique_ptr<CAdxNode> new_node(new CAdxNode);
+		//if (m_vNode[adx_node_index]->m_Type == MidSideNode) {
+			std::unique_ptr<AdxNode> new_node(new AdxNode);
 			new_node->Copy(*(m_vNode[adx_node_index]));
 			new_node->m_ForceVector.Set(0.0, 0.0, 0.0);
 			surface_node.nodes_.push_back(std::move(new_node));
@@ -593,12 +593,12 @@ int CAdx::ExtractSurfaceNode(CStringArray& es_names, CSurfaceNode& surface_node)
 	return 0;
 }
 
-int CAdx::SortElementSet()
+int AdxModel::SortElementSet()
 {
 	return 0;
 }
 
-bool CompareAdxElementSet(CAdxElementSet* e1, CAdxElementSet* e2)
+bool CompareAdxElementSet(AdxElementSet* e1, AdxElementSet* e2)
 {
 	if (e1->m_ID < e2->m_ID) {
 		return true;

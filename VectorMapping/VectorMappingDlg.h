@@ -39,16 +39,16 @@ protected:
 	DECLARE_MESSAGE_MAP()
 
 public:
-	CAdx			m_Adx;
-	CNastran		m_Nastran;
-	CSurfaceNode	m_SurfaceNode;
+	AdxModel			adx_model_;
+	NastranModel		nastran_model_;
+	SurfaceNodeMap	surface_node_map_;
 
-	CString		m_PathAdx;
-	CString		m_PathNastran;
-	CString		m_PathNormalPressure;
-	CString		m_PathTangentPressure;
-	double		m_SearchDistance;
-	CString		m_PathForce;
+	CString		adx_path_;
+	CString		nastran_path_;
+	CString		normal_pressure_path_;
+	CString		tangent_pressure_path_;
+	double		search_distance_;
+	CString		force_output_path_;
 	CListBox	m_ListElementSet;
 	CListCtrl	m_ListParts;
 	CStdioFile	m_LogFile;
@@ -57,12 +57,12 @@ public:
 	CString		m_StrForceY;
 	CString		m_StrForceZ;
 	CString		m_StrForce;
-	double		m_MappingRatio;
-	double		m_MappingRatio_X;
-	double		m_MappingRatio_Y;
-	double		m_MappingRatio_Z;
-	bool		m_LogIsOpen;
-	BOOL		m_RatioIsXYZ;
+	double		mapping_ratio_;
+	double		mapping_ratio_x_;
+	double		mapping_ratio_y_;
+	double		mapping_ratio_z_;
+	bool		log_is_open_;
+	BOOL		use_xyz_ratio_;
 	CString		m_StrForceNorm;
 	CSortParameter m_sortParam;	//! ソートの方法を指定する	
 
@@ -86,12 +86,12 @@ public:
 	afx_msg void OnLvnColumnclickListParts(NMHDR *pNMHDR, LRESULT *pResult);
 	afx_msg void OnLvnItemchangedListParts(NMHDR *pNMHDR, LRESULT *pResult);
 	afx_msg void OnBnClickedCheckXyz();	
-	void ListInsertElementSet(int no_row, CAdxElementSet &es);
+	void ListInsertElementSet(int no_row, AdxElementSet &es);
 	void ControlEnable(bool to_enable);
 	bool EnsureLogFileOpen();
 	bool ValidatePressureInputFiles(bool require_output_path);
 	bool ValidateMappingInputs();
-	int LoadNastranInputs(CNastran& nastran);
+	int LoadNastranInputs(NastranModel& nastran);
 	int CollectCheckedElementSetNames(CStringArray& names);
 	CMzPoint CurrentMappingRatio() const;
 	void UpdateCheckedPartCount();

@@ -13,18 +13,18 @@
 #include "AreaMap.h"
 #include "SurfaceNode.h"
 
-class CAdx
+class AdxModel
 {
 public:
-	CAdx();
-	~CAdx();
+	AdxModel();
+	~AdxModel();
 
-	std::vector<std::unique_ptr<CAdxNode>>			m_vNode;
-	std::vector<std::unique_ptr<CAdxNodeSet>>		m_vNodeSet;
+	std::vector<std::unique_ptr<AdxNode>>			m_vNode;
+	std::vector<std::unique_ptr<AdxNodeSet>>		m_vNodeSet;
 
-	std::vector<std::unique_ptr<CAdxElement>>		m_vElement;
-	std::vector<std::unique_ptr<CAdxElementFace>>	m_vElementFace;
-	std::vector<std::unique_ptr<CAdxElementSet>>	m_vElementSet;
+	std::vector<std::unique_ptr<AdxElement>>		m_vElement;
+	std::vector<std::unique_ptr<AdxElementFace>>	m_vElementFace;
+	std::vector<std::unique_ptr<AdxElementSet>>	m_vElementSet;
 
 	std::unordered_map<int, int>	m_mNodeIDtoIndex;
 	std::unordered_map<int, int>	m_mElementIDtoIndex;
@@ -41,10 +41,10 @@ public:
 
 	bool FaceExist(int& s, int& c, int& e, int& face_index);
 	int  SurfaceExtract(CString& es_name, std::vector<int>& vnode, std::vector<int>& vef);
-	int  ExtractSurfaceNode(CStringArray& es_names, CSurfaceNode& surface_node);
+	int  ExtractSurfaceNode(CStringArray& es_names, SurfaceNodeMap& surface_node);
 	int  ElementSetInf(CString& nodeset_line, CString& name, int& id, CString& comment);
 	int  SortElementSet();
 };
 
-bool CompareAdxElementSet(CAdxElementSet* e1, CAdxElementSet* e2);
+bool CompareAdxElementSet(AdxElementSet* e1, AdxElementSet* e2);
 

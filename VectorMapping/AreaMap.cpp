@@ -6,7 +6,7 @@ bool SpatialGridCell::IsEmpty() const
 	return nodes_.empty();
 }
 
-int SpatialGrid::Build(std::vector<std::unique_ptr<CAdxNode>>& nodes, double pitch)
+int SpatialGrid::Build(std::vector<std::unique_ptr<AdxNode>>& nodes, double pitch)
 {
 	CMzPoint min_point;
 	CMzPoint max_point;
@@ -15,7 +15,7 @@ int SpatialGrid::Build(std::vector<std::unique_ptr<CAdxNode>>& nodes, double pit
 	max_point.Set(-1E100, -1E100, -1E100);
 
 	for (int i = 0; i < static_cast<int>(nodes.size()); i++) {
-		CAdxNode& node = *(nodes[i]);
+		AdxNode& node = *(nodes[i]);
 		if (node.m_Coord.x < min_point.x) min_point.x = node.m_Coord.x;
 		if (node.m_Coord.y < min_point.y) min_point.y = node.m_Coord.y;
 		if (node.m_Coord.z < min_point.z) min_point.z = node.m_Coord.z;
@@ -100,7 +100,7 @@ int SpatialGrid::Clear()
 	return 0;
 }
 
-int SpatialGrid::AddNode(CAdxNode* node)
+int SpatialGrid::AddNode(AdxNode* node)
 {
 	int x, y, z;
 
@@ -123,16 +123,16 @@ int SpatialGrid::AddNode(CAdxNode* node)
 	return 0;
 }
 
-int SpatialGridCell::FindNearestNode(CMzPoint& point, CAdxNode** node, double& distance)
+int SpatialGridCell::FindNearestNode(CMzPoint& point, AdxNode** node, double& distance)
 {
 	*node = NULL;
 	distance = 1E100;
 
-	CAdxNode* nearest_node = NULL;
+	AdxNode* nearest_node = NULL;
 	double min_distance2 = 1E100;
 
 	for (int i = 0; i < static_cast<int>(nodes_.size()); i++) {
-		CAdxNode& candidate = *(nodes_[i]);
+		AdxNode& candidate = *(nodes_[i]);
 		double distance2 = point.DistanceSquared(candidate.m_Coord);
 		if (distance2 < min_distance2) {
 			nearest_node = nodes_[i];

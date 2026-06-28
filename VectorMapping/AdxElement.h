@@ -3,12 +3,12 @@
 // 4 ñ ëÃ2éüóvëfÇÃñ î‘çÜÇ∆ëŒâûÇ∑ÇÈêﬂì_î‘çÜ
 const int cElementFaceIndex[4][6] = { {1,2,3,7,8,9},{0,3,2,6,8,5},{0,1,3,4,9,6},{0,2,1,5,7,4} };
 
-class CAdxElementFace
+class AdxElementFace
 {
 public:
-	CAdxElementFace(void);
-	CAdxElementFace(int node_index[6], int& face_index);
-	~CAdxElementFace(void);
+	AdxElementFace(void);
+	AdxElementFace(int node_index[6], int& face_index);
+	~AdxElementFace(void);
 
 	int m_NodeIndex[6];
 
@@ -18,11 +18,11 @@ public:
 };
 
 
-class CAdxElement
+class AdxElement
 {
 public:
-	CAdxElement(void);
-	~CAdxElement(void);
+	AdxElement(void);
+	~AdxElement(void);
 
 	int m_ID;
 	int m_NodeID[10];

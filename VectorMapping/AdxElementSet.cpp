@@ -2,11 +2,11 @@
 #include "AdxElementSet.h"
 
 
-CAdxElementSet::CAdxElementSet(void)
+AdxElementSet::AdxElementSet(void)
 {
 }
 
 
-CAdxElementSet::~CAdxElementSet(void)
+AdxElementSet::~AdxElementSet(void)
 {
 }

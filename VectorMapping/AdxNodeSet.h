@@ -5,11 +5,11 @@
 #include<vector>
 #include<map>
 
-class CAdxNodeSet
+class AdxNodeSet
 {
 public:
-	CAdxNodeSet(void);
-	~CAdxNodeSet(void);
+	AdxNodeSet(void);
+	~AdxNodeSet(void);
 
 	CString m_NameAdx;	// Adxデータ上の名称
 	CString m_NameUser;	// ユーザー設定名称

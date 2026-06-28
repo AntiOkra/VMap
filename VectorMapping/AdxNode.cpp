@@ -3,23 +3,23 @@
 #include "GeneralFunction.h"
 
 
-CAdxNode::CAdxNode(void)
+AdxNode::AdxNode(void)
 {
 	m_ID = -1;
 	m_Coord.Set(0.0, 0.0, 0.0);
 	m_ForceVector.Set(0.0, 0.0, 0.0);
-	m_Type = Undefined;
+	m_Type = UndefinedNode;
 }
 
 
-CAdxNode::~CAdxNode(void)
+AdxNode::~AdxNode(void)
 {
 }
 
 //
 // 3                2.100002e+002    2.000002e+002    0.000000e+000   
 //
-int CAdxNode::Read(CStringArray& words)
+int AdxNode::Read(CStringArray& words)
 {
 	ASSERT(words.GetCount()>=4);
 
@@ -32,7 +32,7 @@ int CAdxNode::Read(CStringArray& words)
 	return 0;
 }
 
-int CAdxNode::Copy(CAdxNode& n)
+int AdxNode::Copy(AdxNode& n)
 {
 	m_ID = n.m_ID;
 	m_Coord = n.m_Coord;
@@ -42,9 +42,9 @@ int CAdxNode::Copy(CAdxNode& n)
 	return 0;
 }
 
-void CAdxNode::SetType(tNodeType node_type)
+void AdxNode::SetType(AdxNodeType node_type)
 {
-	if (m_Type == Undefined) {
+	if (m_Type == UndefinedNode) {
 		m_Type = node_type;
 	}
 	else {

@@ -7,22 +7,22 @@
 #include"MzPoint.h"
 #include"CNastran.h"
 
-class CSurfaceNode
+class SurfaceNodeMap
 {
 public:
-	CSurfaceNode();
-	~CSurfaceNode();
+	SurfaceNodeMap();
+	~SurfaceNodeMap();
 
-	std::vector<std::unique_ptr<CAdxNode>>	nodes_;
+	std::vector<std::unique_ptr<AdxNode>>	nodes_;
 	SpatialGrid				spatial_grid_;
 	CMzPoint				m_MappedForce;
 	CMzPoint				m_LossForce;
 
 	CStdioFile*				m_LogFile;
 
-	int MapForces(CNastran& nastran, double upper_limit, CMzPoint ratio);
-	int FindNearestNode(CMzPoint& point, double upper_limit, CAdxNode** node, double& distance);
-	int FindNearestNodeBruteForce(CMzPoint& point, double upper_limit, CAdxNode** node, double& distance);
+	int MapForces(NastranModel& nastran, double upper_limit, CMzPoint ratio);
+	int FindNearestNode(CMzPoint& point, double upper_limit, AdxNode** node, double& distance);
+	int FindNearestNodeBruteForce(CMzPoint& point, double upper_limit, AdxNode** node, double& distance);
 	int BuildSpatialGrid();
 	int ExportAdxForce(CString& fpath, CString& process);
 	void LogWrite(CString &msg);

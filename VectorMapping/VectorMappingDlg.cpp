@@ -57,21 +57,21 @@ END_MESSAGE_MAP()
 
 CVectorMappingDlg::CVectorMappingDlg(CWnd* pParent /*=NULL*/)
 	: CDialogEx(IDD_VECTORMAPPING_DIALOG, pParent)
-	, m_PathAdx(_T(""))
-	, m_PathNastran(_T(""))
-	, m_PathNormalPressure(_T(""))
-	, m_PathTangentPressure(_T(""))
-	, m_SearchDistance(0)
-	, m_PathForce(_T(""))
+	, adx_path_(_T(""))
+	, nastran_path_(_T(""))
+	, normal_pressure_path_(_T(""))
+	, tangent_pressure_path_(_T(""))
+	, search_distance_(0)
+	, force_output_path_(_T(""))
 	, m_str_selcount(_T(""))
 	, m_StrForceX(_T("-"))
 	, m_StrForceY(_T("-"))
 	, m_StrForceZ(_T("-"))
-	, m_MappingRatio(1)
-	, m_MappingRatio_X(1)
-	, m_MappingRatio_Y(1)
-	, m_MappingRatio_Z(1)
-	, m_RatioIsXYZ(FALSE)
+	, mapping_ratio_(1)
+	, mapping_ratio_x_(1)
+	, mapping_ratio_y_(1)
+	, mapping_ratio_z_(1)
+	, use_xyz_ratio_(FALSE)
 	, m_StrForceNorm(_T("-"))
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
@@ -80,13 +80,13 @@ CVectorMappingDlg::CVectorMappingDlg(CWnd* pParent /*=NULL*/)
 void CVectorMappingDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
-	DDX_Text(pDX, IDC_EDIT_ADX, m_PathAdx);
-	DDX_Text(pDX, IDC_EDIT_NASTRAN, m_PathNastran);
-	DDX_Text(pDX, IDC_EDIT_NORMAL, m_PathNormalPressure);
-	DDX_Text(pDX, IDC_EDIT_TANGENT, m_PathTangentPressure);
-	DDX_Text(pDX, IDC_EDIT_UPR_LIMIT, m_SearchDistance);
-	DDV_MinMaxDouble(pDX, m_SearchDistance, 1.0, 30.0);
-	DDX_Text(pDX, IDC_EDIT_OUT_FORCE, m_PathForce);
+	DDX_Text(pDX, IDC_EDIT_ADX, adx_path_);
+	DDX_Text(pDX, IDC_EDIT_NASTRAN, nastran_path_);
+	DDX_Text(pDX, IDC_EDIT_NORMAL, normal_pressure_path_);
+	DDX_Text(pDX, IDC_EDIT_TANGENT, tangent_pressure_path_);
+	DDX_Text(pDX, IDC_EDIT_UPR_LIMIT, search_distance_);
+	DDV_MinMaxDouble(pDX, search_distance_, 1.0, 30.0);
+	DDX_Text(pDX, IDC_EDIT_OUT_FORCE, force_output_path_);
 	DDX_Control(pDX, IDC_LIST_ADX, m_ListElementSet);
 	DDX_Control(pDX, IDC_LIST_PARTS, m_ListParts);
 	DDX_Text(pDX, IDC_STATIC_SEL_COUNT, m_str_selcount);
@@ -94,12 +94,12 @@ void CVectorMappingDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Text(pDX, IDC_EDIT_FORCE_X, m_StrForceX);
 	DDX_Text(pDX, IDC_EDIT_FORCE_Y, m_StrForceY);
 	DDX_Text(pDX, IDC_EDIT_FORCE_Z, m_StrForceZ);
-	DDX_Text(pDX, IDC_EDIT_FORCE_X2, m_MappingRatio);
-	DDX_Text(pDX, IDC_EDIT_MAPPING_RATIO, m_MappingRatio);
-	DDX_Text(pDX, IDC_EDIT_MAPPING_RATIO_X, m_MappingRatio_X);
-	DDX_Text(pDX, IDC_EDIT_MAPPING_RATIO_Y, m_MappingRatio_Y);
-	DDX_Text(pDX, IDC_EDIT_MAPPING_RATIO_Z, m_MappingRatio_Z);
-	DDX_Check(pDX, IDC_CHECK_XYZ, m_RatioIsXYZ);
+	DDX_Text(pDX, IDC_EDIT_FORCE_X2, mapping_ratio_);
+	DDX_Text(pDX, IDC_EDIT_MAPPING_RATIO, mapping_ratio_);
+	DDX_Text(pDX, IDC_EDIT_MAPPING_RATIO_X, mapping_ratio_x_);
+	DDX_Text(pDX, IDC_EDIT_MAPPING_RATIO_Y, mapping_ratio_y_);
+	DDX_Text(pDX, IDC_EDIT_MAPPING_RATIO_Z, mapping_ratio_z_);
+	DDX_Check(pDX, IDC_CHECK_XYZ, use_xyz_ratio_);
 	DDX_Text(pDX, IDC_EDIT_FORCE_NORM, m_StrForceNorm);
 }
 
@@ -166,11 +166,11 @@ BOOL CVectorMappingDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// 小さいアイコンの設定
 
 	// TODO: 初期化をここに追加します。
-	m_SearchDistance = 10.0;
-	m_MappingRatio = 1.0;
-	m_MappingRatio_X = 1.0;
-	m_MappingRatio_Y = 1.0;
-	m_MappingRatio_Z = 1.0;
+	search_distance_ = 10.0;
+	mapping_ratio_ = 1.0;
+	mapping_ratio_x_ = 1.0;
+	mapping_ratio_y_ = 1.0;
+	mapping_ratio_z_ = 1.0;
 	m_str_selcount = "0";
 
 	m_StrForceX = "-";
@@ -178,7 +178,7 @@ BOOL CVectorMappingDlg::OnInitDialog()
 	m_StrForceZ = "-";
 	m_StrForceNorm = "-";
 
-	m_RatioIsXYZ = FALSE;
+	use_xyz_ratio_ = FALSE;
 
 	DWORD dwStyle = m_ListParts.GetExtendedStyle();
 	//dwStyle |= LVS_EX_CHECKBOXES | LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES;
@@ -189,7 +189,7 @@ BOOL CVectorMappingDlg::OnInitDialog()
 	m_ListParts.InsertColumn(1, _T("ID"), LVCFMT_RIGHT, 100);
 	m_ListParts.InsertColumn(2, _T("COMMENT"), LVCFMT_LEFT, 200);
 
-	m_LogIsOpen = false;
+	log_is_open_ = false;
 
 	UpdateData(FALSE);
 
@@ -255,7 +255,7 @@ void CVectorMappingDlg::OnBnClickedButtonAdx()
 
 	if (selDlg.DoModal() == IDOK)
 	{
-		m_PathAdx = selDlg.GetPathName();
+		adx_path_ = selDlg.GetPathName();
 
 		m_ListElementSet.ResetContent();
 		m_ListParts.DeleteAllItems();
@@ -279,7 +279,7 @@ void CVectorMappingDlg::OnBnClickedButtonNastran()
 
 	if (selDlg.DoModal() == IDOK)
 	{
-		m_PathNastran = selDlg.GetPathName();
+		nastran_path_ = selDlg.GetPathName();
 
 		m_StrForceX = "-";
 		m_StrForceY = "-";
@@ -301,7 +301,7 @@ void CVectorMappingDlg::OnBnClickedButtonNormal()
 
 	if (selDlg.DoModal() == IDOK)
 	{
-		m_PathNormalPressure = selDlg.GetPathName();
+		normal_pressure_path_ = selDlg.GetPathName();
 
 		m_StrForceX = "-";
 		m_StrForceY = "-";
@@ -323,7 +323,7 @@ void CVectorMappingDlg::OnBnClickedButtonTangent()
 
 	if (selDlg.DoModal() == IDOK)
 	{
-		m_PathTangentPressure = selDlg.GetPathName();
+		tangent_pressure_path_ = selDlg.GetPathName();
 
 		m_StrForceX = "-";
 		m_StrForceY = "-";
@@ -345,7 +345,7 @@ void CVectorMappingDlg::OnBnClickedButtonOut()
 	CFileDialog selDlg(FALSE, _T("adx"), _T("force"), OFN_OVERWRITEPROMPT, filter);
 
 	if (selDlg.DoModal() == IDOK) {
-		m_PathForce = selDlg.GetPathName();
+		force_output_path_ = selDlg.GetPathName();
 		UpdateData(FALSE);
 	}
 
@@ -360,7 +360,7 @@ void CVectorMappingDlg::OnBnClickedOk()
 	// TODO: ここにコントロール通知ハンドラー コードを追加します。
 
 	CString log_path;
-	LogFileName(m_PathAdx, log_path);
+	LogFileName(adx_path_, log_path);
 	CStdioFile LogFile;
 
 	// 出力ファイル
@@ -370,25 +370,25 @@ void CVectorMappingDlg::OnBnClickedOk()
 		return;
 	}
 
-	m_Nastran.m_LogFile = &LogFile;
-	m_SurfaceNode.m_LogFile = &LogFile;
+	nastran_model_.m_LogFile = &LogFile;
+	surface_node_map_.m_LogFile = &LogFile;
 
-	if (m_Nastran.ReadNastranFile(m_PathNastran) != 0) {
+	if (nastran_model_.ReadNastranFile(nastran_path_) != 0) {
 		AfxMessageBox(_T("Nastranファイル読み込めませんでした"));
 		return;
 	}
 
-	if (m_Nastran.ReadNormalVectorFile(m_PathNormalPressure) != 0) {
+	if (nastran_model_.ReadNormalVectorFile(normal_pressure_path_) != 0) {
 		AfxMessageBox(_T("NormalPressureVectorファイル読み込めませんでした"));
 		return;
 	}
 
-	if (m_Nastran.ReadTangentVectorFile(m_PathTangentPressure) != 0) {
+	if (nastran_model_.ReadTangentVectorFile(tangent_pressure_path_) != 0) {
 		AfxMessageBox(_T("TangentPressureVectorファイル読み込めませんでした"));
 		return;
 	}
 
-	if (m_Nastran.ForceCalc() != 0) {
+	if (nastran_model_.ForceCalc() != 0) {
 		AfxMessageBox(_T("Nastranファイルの荷重を計算できませんでした"));
 		return;
 	}
@@ -399,13 +399,13 @@ void CVectorMappingDlg::OnBnClickedOk()
 
 	for (int i = 0; i<m_ListElementSet.GetCount(); i++) {
 		if (m_ListElementSet.GetSel(i)) {
-			CString& name = (m_Adx.m_vElementSet[i])->m_NameAdx;
+			CString& name = (adx_model_.m_vElementSet[i])->m_NameAdx;
 			v_name.Add(name);
 		}
 	}
 
 	// Adxファイルの表面ノードを取得
-	if (m_Adx.ExtractSurfaceNode(v_name, m_SurfaceNode) != 0) {
+	if (adx_model_.ExtractSurfaceNode(v_name, surface_node_map_) != 0) {
 		AfxMessageBox(_T("表面ノードを取得できませんでした"));
 		return;
 	}
@@ -414,7 +414,7 @@ void CVectorMappingDlg::OnBnClickedOk()
 	}
 
 	// エリアマップ
-	if (m_SurfaceNode.BuildSpatialGrid() != 0) {
+	if (surface_node_map_.BuildSpatialGrid() != 0) {
 		AfxMessageBox(_T("ノードマップ作成エラーです"));
 		return;
 	}
@@ -423,34 +423,34 @@ void CVectorMappingDlg::OnBnClickedOk()
 
 	/* Dump ( debug用 )
 	dump_path = _T("nastran_debug.txt");
-	m_Nastran.Dump(dump_path);
+	nastran_model_.Dump(dump_path);
 
 	dump_path = _T("dump_map_debug.txt");
-	m_SurfaceNode.Dump(dump_path);
+	surface_node_map_.Dump(dump_path);
 	*/
 
 	CMzPoint ratio;
 
-	if (m_RatioIsXYZ) {
-		ratio.x = m_MappingRatio_X;
-		ratio.y = m_MappingRatio_Y;
-		ratio.z = m_MappingRatio_Z;
+	if (use_xyz_ratio_) {
+		ratio.x = mapping_ratio_x_;
+		ratio.y = mapping_ratio_y_;
+		ratio.z = mapping_ratio_z_;
 	}
 	else {
-		ratio.x = m_MappingRatio;
-		ratio.y = m_MappingRatio;
-		ratio.z = m_MappingRatio;
+		ratio.x = mapping_ratio_;
+		ratio.y = mapping_ratio_;
+		ratio.z = mapping_ratio_;
 	}
 
 	// マッピング
-	if (m_SurfaceNode.MapForces(m_Nastran, m_SearchDistance, ratio) != 0) {
+	if (surface_node_map_.MapForces(nastran_model_, search_distance_, ratio) != 0) {
 		AfxMessageBox(_T("マッピング実行時エラーです"));
 		return;
 	}
 
 	// Forceデータ出力
 	CString process = _T("TEST");
-	if (m_SurfaceNode.ExportAdxForce(m_PathForce,process) != 0) {
+	if (surface_node_map_.ExportAdxForce(force_output_path_,process) != 0) {
 		AfxMessageBox(_T("Forceファイル出力ができませんでした"));
 	}
 
@@ -458,14 +458,14 @@ void CVectorMappingDlg::OnBnClickedOk()
 
 	CMzPoint nastran_force;
 
-	m_Nastran.GetTotalForce(nastran_force);
+	nastran_model_.GetTotalForce(nastran_force);
 	buf.Format(_T("NASTRAN_FORCE:%10.3f,%10.3f,%10.3f\n"), nastran_force.x,nastran_force.y,nastran_force.z);
 	LogFile.WriteString(buf);
 
-	buf.Format(_T("MAPPED_FORCE:%10.3f,%10.3f,%10.3f\n"), m_SurfaceNode.m_MappedForce.x, m_SurfaceNode.m_MappedForce.y, m_SurfaceNode.m_MappedForce.z);
+	buf.Format(_T("MAPPED_FORCE:%10.3f,%10.3f,%10.3f\n"), surface_node_map_.m_MappedForce.x, surface_node_map_.m_MappedForce.y, surface_node_map_.m_MappedForce.z);
 	LogFile.WriteString(buf);
 
-	buf.Format(_T("LOSSED_FORCE:%10.3f,%10.3f,%10.3f\n"), m_SurfaceNode.m_LossForce.x, m_SurfaceNode.m_LossForce.y, m_SurfaceNode.m_LossForce.z);
+	buf.Format(_T("LOSSED_FORCE:%10.3f,%10.3f,%10.3f\n"), surface_node_map_.m_LossForce.x, surface_node_map_.m_LossForce.y, surface_node_map_.m_LossForce.z);
 	LogFile.WriteString(buf);
 
 	LogFile.Close();
@@ -520,7 +520,7 @@ void CVectorMappingDlg::OnBnClickedButtonAdxread()
 	// TODO: ここにコントロール通知ハンドラー コードを追加します。
 	UpdateData(TRUE);
 
-	if (!FileExists(m_PathAdx)) {
+	if (!FileExists(adx_path_)) {
 		AfxMessageBox(_T("ADXファイルを指定してください"));
 		return;
 	}
@@ -530,45 +530,45 @@ void CVectorMappingDlg::OnBnClickedButtonAdxread()
 
 	// ログファイルオープン
 	CString log_path;
-	LogFileName(m_PathAdx, log_path);
+	LogFileName(adx_path_, log_path);
 
 	CFileStatus fstatus;
 	BOOL ret;
 
-	if ( ! m_LogIsOpen ) {
+	if ( ! log_is_open_ ) {
 		ret = m_LogFile.Open(log_path, CFile::modeCreate | CFile::modeWrite | CFile::shareDenyNone | CFile::typeText);
 		if (ret == FALSE) {
 			return;
 		}
-		m_LogIsOpen = true;
+		log_is_open_ = true;
 	}
 
 	// LOCALE設定
 	setlocale(LC_CTYPE, "jpn");
 
-	m_Adx.RemoveAll();
+	adx_model_.RemoveAll();
 
-	if (m_Adx.Read(m_PathAdx) == 0) {
+	if (adx_model_.Read(adx_path_) == 0) {
 
-		if (m_Adx.Activate() != 0) {
+		if (adx_model_.Activate() != 0) {
 			ControlEnable(false);
 			AfxMessageBox(_T("ADXファイル構成できませんでした"));
 			return;
 		}
 
 		// IDでソート
-		//sort(m_Adx.m_vElementSet.begin(), m_Adx.m_vElementSet.end(), CAdxElementSet::Compare);
+		//sort(adx_model_.m_vElementSet.begin(), adx_model_.m_vElementSet.end(), AdxElementSet::Compare);
 
 		CString s_item;
-		for (int i = 0; i < m_Adx.m_vElementSet.size(); i++) {
-			CAdxElementSet& es = *(m_Adx.m_vElementSet[i]);
+		for (int i = 0; i < adx_model_.m_vElementSet.size(); i++) {
+			AdxElementSet& es = *(adx_model_.m_vElementSet[i]);
 			s_item.Format(_T("%-30s %-20s"), es.m_NameAdx.Trim(), es.m_NameUser.Trim());
 			//m_ListElementSet.InsertString(i, es.m_NameAdx + " " + es.m_NameUser);
 			m_ListElementSet.InsertString(i, s_item);
 		}
 
-		for (int i = 0; i < m_Adx.m_vElementSet.size(); i++) {
-			ListInsertElementSet(i,*(m_Adx.m_vElementSet[i]));
+		for (int i = 0; i < adx_model_.m_vElementSet.size(); i++) {
+			ListInsertElementSet(i,*(adx_model_.m_vElementSet[i]));
 		}
 
 		ControlEnable(true);
@@ -588,7 +588,7 @@ void CVectorMappingDlg::OnBnClickedButtonAdxread()
 	buf.Format(_T("-------------------------------------------------------\n"));
 	m_LogFile.WriteString(buf);
 
-	buf.Format(_T("ADX_FILE読み込みました:%s\n"), m_PathAdx);
+	buf.Format(_T("ADX_FILE読み込みました:%s\n"), adx_path_);
 	m_LogFile.WriteString(buf);
 
 	buf.Format(_T("-------------------------------------------------------\n"));
@@ -614,36 +614,36 @@ void CVectorMappingDlg::ControlEnable(bool to_enable)
 }
 bool CVectorMappingDlg::EnsureLogFileOpen()
 {
-	if (m_LogIsOpen) {
+	if (log_is_open_) {
 		return true;
 	}
 
 	CString log_path;
-	LogFileName(m_PathAdx, log_path);
+	LogFileName(adx_path_, log_path);
 	if (m_LogFile.Open(log_path, CFile::modeCreate | CFile::modeWrite | CFile::shareDenyNone | CFile::typeText) == FALSE) {
 		AfxMessageBox(_T("ログファイルを作成できませんでした"));
 		return false;
 	}
 
-	m_LogIsOpen = true;
+	log_is_open_ = true;
 	return true;
 }
 
 bool CVectorMappingDlg::ValidatePressureInputFiles(bool require_output_path)
 {
-	if (!FileExists(m_PathNastran)) {
+	if (!FileExists(nastran_path_)) {
 		AfxMessageBox(_T("Nastranファイルを指定してください"));
 		return false;
 	}
-	if (!FileExists(m_PathNormalPressure)) {
+	if (!FileExists(normal_pressure_path_)) {
 		AfxMessageBox(_T("NormalPressureVectorファイルを指定してください"));
 		return false;
 	}
-	if (!FileExists(m_PathTangentPressure)) {
+	if (!FileExists(tangent_pressure_path_)) {
 		AfxMessageBox(_T("TangentPressureVectorファイルを指定してください"));
 		return false;
 	}
-	if (require_output_path && IsBlankPath(m_PathForce)) {
+	if (require_output_path && IsBlankPath(force_output_path_)) {
 		AfxMessageBox(_T("出力Forceファイルを指定してください"));
 		return false;
 	}
@@ -653,7 +653,7 @@ bool CVectorMappingDlg::ValidatePressureInputFiles(bool require_output_path)
 
 bool CVectorMappingDlg::ValidateMappingInputs()
 {
-	if (m_Adx.IsEmpty()) {
+	if (adx_model_.IsEmpty()) {
 		AfxMessageBox(_T("先にADXファイルを読み込んでください"));
 		return false;
 	}
@@ -661,19 +661,19 @@ bool CVectorMappingDlg::ValidateMappingInputs()
 	return ValidatePressureInputFiles(true);
 }
 
-int CVectorMappingDlg::LoadNastranInputs(CNastran& nastran)
+int CVectorMappingDlg::LoadNastranInputs(NastranModel& nastran)
 {
-	if (nastran.ReadNastranFile(m_PathNastran) != 0) {
+	if (nastran.ReadNastranFile(nastran_path_) != 0) {
 		AfxMessageBox(_T("Nastranファイル読み込めませんでした"));
 		return 1;
 	}
 
-	if (nastran.ReadNormalVectorFile(m_PathNormalPressure) != 0) {
+	if (nastran.ReadNormalVectorFile(normal_pressure_path_) != 0) {
 		AfxMessageBox(_T("NormalPressureVectorファイル読み込めませんでした"));
 		return 1;
 	}
 
-	if (nastran.ReadTangentVectorFile(m_PathTangentPressure) != 0) {
+	if (nastran.ReadTangentVectorFile(tangent_pressure_path_) != 0) {
 		AfxMessageBox(_T("TangentPressureVectorファイル読み込めませんでした"));
 		return 1;
 	}
@@ -695,7 +695,7 @@ int CVectorMappingDlg::CollectCheckedElementSetNames(CStringArray& names)
 
 	for (int nItem = 0; nItem < nCount; nItem++) {
 		if (ListView_GetCheckState(hwndList, nItem) == TRUE) {
-			CAdxElementSet* tmp_es = (CAdxElementSet*)(m_ListParts.GetItemData(nItem));
+			AdxElementSet* tmp_es = (AdxElementSet*)(m_ListParts.GetItemData(nItem));
 			names.Add(tmp_es->m_NameAdx);
 		}
 	}
@@ -705,11 +705,11 @@ int CVectorMappingDlg::CollectCheckedElementSetNames(CStringArray& names)
 
 CMzPoint CVectorMappingDlg::CurrentMappingRatio() const
 {
-	if (m_RatioIsXYZ) {
-		return CMzPoint(m_MappingRatio_X, m_MappingRatio_Y, m_MappingRatio_Z);
+	if (use_xyz_ratio_) {
+		return CMzPoint(mapping_ratio_x_, mapping_ratio_y_, mapping_ratio_z_);
 	}
 
-	return CMzPoint(m_MappingRatio, m_MappingRatio, m_MappingRatio);
+	return CMzPoint(mapping_ratio_, mapping_ratio_, mapping_ratio_);
 }
 
 void CVectorMappingDlg::UpdateCheckedPartCount()
@@ -734,13 +734,13 @@ void CVectorMappingDlg::OnBnClickedButtonExec()
 	}
 
 	//　初期化
-	m_Nastran.RemoveAll();
-	m_SurfaceNode.Clear();
+	nastran_model_.RemoveAll();
+	surface_node_map_.Clear();
 
-	m_Nastran.m_LogFile = &m_LogFile;
-	m_SurfaceNode.m_LogFile = &m_LogFile;
+	nastran_model_.m_LogFile = &m_LogFile;
+	surface_node_map_.m_LogFile = &m_LogFile;
 
-	if (LoadNastranInputs(m_Nastran) != 0) {
+	if (LoadNastranInputs(nastran_model_) != 0) {
 		return;
 	}
 
@@ -751,27 +751,27 @@ void CVectorMappingDlg::OnBnClickedButtonExec()
 	}
 
 	// Adxファイルの表面ノードを取得
-	if (m_Adx.ExtractSurfaceNode(v_name, m_SurfaceNode) != 0) {
+	if (adx_model_.ExtractSurfaceNode(v_name, surface_node_map_) != 0) {
 		AfxMessageBox(_T("表面ノードを取得できませんでした"));
 		return;
 	}
 
 	// エリアマップ
-	if (m_SurfaceNode.BuildSpatialGrid() != 0) {
+	if (surface_node_map_.BuildSpatialGrid() != 0) {
 		AfxMessageBox(_T("ノードマップ作成エラーです"));
 		return;
 	}
 
 	CMzPoint ratio = CurrentMappingRatio();
 
-	if (m_SurfaceNode.MapForces(m_Nastran, m_SearchDistance, ratio) != 0) {
+	if (surface_node_map_.MapForces(nastran_model_, search_distance_, ratio) != 0) {
 		AfxMessageBox(_T("マッピング実行時エラーです"));
 		return;
 	}
 
 	// Forceデータ出力
 	CString process = _T("AdvcStep-99999");
-	if (m_SurfaceNode.ExportAdxForce(m_PathForce, process) != 0) {
+	if (surface_node_map_.ExportAdxForce(force_output_path_, process) != 0) {
 		AfxMessageBox(_T("Forceファイル出力ができませんでした"));
 		return;
 	}
@@ -779,34 +779,34 @@ void CVectorMappingDlg::OnBnClickedButtonExec()
 	// Dump(Debug用)
 	CString n_path;
 	CString mod_str = _T("_N.csv");
-	ModFileName(m_PathNastran, '.', mod_str, n_path);
-	m_Nastran.Dump_N(n_path);
+	ModFileName(nastran_path_, '.', mod_str, n_path);
+	nastran_model_.Dump_N(n_path);
 
 	CString e_path;
 	mod_str = _T("_E.csv");
-	ModFileName(m_PathNastran, '.', mod_str, e_path);
-	m_Nastran.Dump_E(e_path);
+	ModFileName(nastran_path_, '.', mod_str, e_path);
+	nastran_model_.Dump_E(e_path);
 
 	CString m_path;
 	mod_str = _T("_map.csv");
-	ModFileName(m_PathForce, '.', mod_str, m_path);
-	m_SurfaceNode.DumpNode(m_path);
+	ModFileName(force_output_path_, '.', mod_str, m_path);
+	surface_node_map_.DumpNode(m_path);
 
 	CString buf;
 
 	buf.Format(_T("-------------------------------------------------------\n"));
 	m_LogFile.WriteString(buf);
 
-	buf.Format(_T("NASTRAN FILE:%s\n"), m_PathNastran);
+	buf.Format(_T("NASTRAN FILE:%s\n"), nastran_path_);
 	m_LogFile.WriteString(buf);
 
-	buf.Format(_T("PAM_STAMP NormalVectorFile :%s\n"), m_PathNormalPressure);
+	buf.Format(_T("PAM_STAMP NormalVectorFile :%s\n"), normal_pressure_path_);
 	m_LogFile.WriteString(buf);
 
-	buf.Format(_T("PAM_STAMP TangentVectorFile:%s\n"), m_PathTangentPressure);
+	buf.Format(_T("PAM_STAMP TangentVectorFile:%s\n"), tangent_pressure_path_);
 	m_LogFile.WriteString(buf);
 
-	buf.Format(_T("Adx Force Mapping File     :%s\n"), m_PathForce);
+	buf.Format(_T("Adx Force Mapping File     :%s\n"), force_output_path_);
 	m_LogFile.WriteString(buf);
 
 	buf.Format(_T("マッピング時 係数          : X(%8.3f) Y(%8.3f) Z(%8.3f)\n"), ratio.x, ratio.y, ratio.z);
@@ -814,17 +814,17 @@ void CVectorMappingDlg::OnBnClickedButtonExec()
 
 	CMzPoint nastran_force;
 
-	m_Nastran.GetTotalForce(nastran_force);
+	nastran_model_.GetTotalForce(nastran_force);
 	buf.Format(_T("NASTRAN_荷重(kN) (元)           :%10.3f,%10.3f,%10.3f\n"), nastran_force.x / 1000.0, nastran_force.y / 1000.0, nastran_force.z / 1000.0);
 	m_LogFile.WriteString(buf);
 
 	buf.Format(_T("NASTRAN_荷重(kN) (係数処理後)   :%10.3f,%10.3f,%10.3f\n"), nastran_force.x / 1000.0 * ratio.x, nastran_force.y / 1000.0 * ratio.y, nastran_force.z / 1000.0 * ratio.z);
 	m_LogFile.WriteString(buf);
 
-	buf.Format(_T("マッピングされた荷重(kN)        :%10.3f,%10.3f,%10.3f\n"), m_SurfaceNode.m_MappedForce.x / 1000.0, m_SurfaceNode.m_MappedForce.y / 1000.0, m_SurfaceNode.m_MappedForce.z / 1000.0);
+	buf.Format(_T("マッピングされた荷重(kN)        :%10.3f,%10.3f,%10.3f\n"), surface_node_map_.m_MappedForce.x / 1000.0, surface_node_map_.m_MappedForce.y / 1000.0, surface_node_map_.m_MappedForce.z / 1000.0);
 	m_LogFile.WriteString(buf);
 
-	buf.Format(_T("マッピングされなかった荷重(kN)  :%10.3f,%10.3f,%10.3f\n"), m_SurfaceNode.m_LossForce.x / 1000.0, m_SurfaceNode.m_LossForce.y / 1000.0, m_SurfaceNode.m_LossForce.z / 1000.0);
+	buf.Format(_T("マッピングされなかった荷重(kN)  :%10.3f,%10.3f,%10.3f\n"), surface_node_map_.m_LossForce.x / 1000.0, surface_node_map_.m_LossForce.y / 1000.0, surface_node_map_.m_LossForce.z / 1000.0);
 	m_LogFile.WriteString(buf);
 
 	buf.Format(_T("-------------------------------------------------------\n"));
@@ -832,8 +832,8 @@ void CVectorMappingDlg::OnBnClickedButtonExec()
 
 	m_LogFile.Flush();
 
-	m_Nastran.RemoveAll();
-	m_SurfaceNode.Clear();
+	nastran_model_.RemoveAll();
+	surface_node_map_.Clear();
 
 	AfxMessageBox(_T("マッピング完了しました"));
 }
@@ -841,7 +841,7 @@ void CVectorMappingDlg::OnBnClickedButtonExec()
 void CVectorMappingDlg::OnBnClickedCancel()
 {
 	// TODO: ここにコントロール通知ハンドラー コードを追加します。
-	if ( m_LogIsOpen ) {
+	if ( log_is_open_ ) {
 		m_LogFile.Close();
 	}
 
@@ -897,7 +897,7 @@ void CVectorMappingDlg::OnBnClickedButtonForceCalc()
 		return;
 	}
 
-	CNastran nas_test;
+	NastranModel nas_test;
 	if (LoadNastranInputs(nas_test) != 0) {
 		return;
 	}
@@ -914,7 +914,7 @@ void CVectorMappingDlg::OnBnClickedButtonForceCalc()
 	UpdateData(FALSE);
 }
 
-void CVectorMappingDlg::ListInsertElementSet(int no_row, CAdxElementSet &es)
+void CVectorMappingDlg::ListInsertElementSet(int no_row, AdxElementSet &es)
 {
 	/*
 	m_ListParts.InsertItem(0, _T("A"));
@@ -960,8 +960,8 @@ int CVectorMappingDlg::CompareData(LPARAM lParam1, LPARAM lParam2, LPARAM lParam
 {
 	int result = 0;
 
-	CAdxElementSet* d1 = (CAdxElementSet*)lParam1;
-	CAdxElementSet* d2 = (CAdxElementSet*)lParam2;
+	AdxElementSet* d1 = (AdxElementSet*)lParam1;
+	AdxElementSet* d2 = (AdxElementSet*)lParam2;
 
 	CSortParameter* sortParam = (CSortParameter*)lParamSort;
 	//CSortParameter* sortParam = &m_sortParam;
@@ -1010,7 +1010,7 @@ void CVectorMappingDlg::OnBnClickedCheckXyz()
 	UpdateData(TRUE);
 
 	// TODO: ここにコントロール通知ハンドラー コードを追加します。
-	if (m_RatioIsXYZ) {
+	if (use_xyz_ratio_) {
 		e = (CEdit*)GetDlgItem(IDC_EDIT_MAPPING_RATIO); e->EnableWindow(FALSE);
 		e = (CEdit*)GetDlgItem(IDC_EDIT_MAPPING_RATIO_X); e->EnableWindow(TRUE);
 		e = (CEdit*)GetDlgItem(IDC_EDIT_MAPPING_RATIO_Y); e->EnableWindow(TRUE);

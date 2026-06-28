@@ -2,11 +2,11 @@
 #include "AdxNodeSet.h"
 
 
-CAdxNodeSet::CAdxNodeSet(void)
+AdxNodeSet::AdxNodeSet(void)
 {
 }
 
 
-CAdxNodeSet::~CAdxNodeSet(void)
+AdxNodeSet::~AdxNodeSet(void)
 {
 }

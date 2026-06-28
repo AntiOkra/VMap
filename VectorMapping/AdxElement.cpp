@@ -3,11 +3,11 @@
 #include "GeneralFunction.h"
 
 
-CAdxElementFace::CAdxElementFace(void)
+AdxElementFace::AdxElementFace(void)
 {
 }
  
-CAdxElementFace::CAdxElementFace(int node_index[6], int& face_index)
+AdxElementFace::AdxElementFace(int node_index[6], int& face_index)
 {
 	for (int i = 0; i < 6; i++) {
 		m_NodeIndex[i] = node_index[i];
@@ -20,18 +20,18 @@ CAdxElementFace::CAdxElementFace(int node_index[6], int& face_index)
 }
 
 
-CAdxElementFace::~CAdxElementFace(void)
+AdxElementFace::~AdxElementFace(void)
 {
 }
 
 
-CAdxElement::CAdxElement(void)
+AdxElement::AdxElement(void)
 {
 	m_ID = -1;
 }
 
 
-CAdxElement::~CAdxElement(void)
+AdxElement::~AdxElement(void)
 {
 }
 
@@ -39,7 +39,7 @@ CAdxElement::~CAdxElement(void)
 // 971               528               529               530               531               554               556               557               555               559               558               
 
 //
-int CAdxElement::Read(CStringArray& words)
+int AdxElement::Read(CStringArray& words)
 {
 	ASSERT(words.GetCount() >= 11);
 

@@ -49,3 +49,8 @@ This project is moving from legacy MFC-style names to a smaller modern C++ style
 - Rename in small vertical slices and keep each version buildable.
 - Keep compatibility wrappers temporarily when a rename would otherwise touch unrelated UI code.
 - Each version tag should describe the completed slice, for example `v0.2.0`.
+
+## Versioned Slices
+
+- `v0.2.0`: Introduced `SpatialGrid`/`SpatialGridCell` and moved surface-node storage to `std::unique_ptr`.
+- `v0.3.0`: Renamed primary ADX, Nastran, and surface mapping domain classes, plus first dialog-owned model/path members.

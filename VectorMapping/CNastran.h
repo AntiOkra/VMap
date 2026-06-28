@@ -7,13 +7,13 @@
 
 #include"MzPoint.h"
 
-typedef enum { CTRIA3, CQUAD4, CBEAM } tNastranElementType;
+typedef enum { CTRIA3, CQUAD4, CBEAM } NastranElementType;
 
-class CNastranNode
+class NastranNode
 {
 public:
-	CNastranNode();
-	~CNastranNode();
+	NastranNode();
+	~NastranNode();
 
 	int m_ID;
 	CMzPoint m_Coord;					// ノード座標値
@@ -29,15 +29,15 @@ public:
 
 };
 
-class CNastranElement
+class NastranElement
 {
 public:
-	CNastranElement();
-	~CNastranElement();
+	NastranElement();
+	~NastranElement();
 
 	int m_ID;
 
-	tNastranElementType m_type;
+	NastranElementType m_type;
 	int m_NodeID[4];
 	int m_NodeIndex[4];
 	double m_Area;
@@ -45,14 +45,14 @@ public:
 	int Read(const CString& line);
 };
 
-class CNastran
+class NastranModel
 {
 public:
-	CNastran();
-	~CNastran();
+	NastranModel();
+	~NastranModel();
 
-	std::vector<std::unique_ptr<CNastranNode>>			m_vNode;
-	std::vector<std::unique_ptr<CNastranElement>>		m_vElement;
+	std::vector<std::unique_ptr<NastranNode>>			m_vNode;
+	std::vector<std::unique_ptr<NastranElement>>		m_vElement;
 
 	std::unordered_map<int, int>		m_mNodeIDtoIndex;
 	std::unordered_map<int, int>		m_mElementIDtoIndex;

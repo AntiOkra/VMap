@@ -13,11 +13,11 @@
 //971               528               529               530               531               554               556               557               555               559               558               
 //972               528               530               532               533               556               561               562               560               564               563               
 
-class CAdxElementSet
+class AdxElementSet
 {
 public:
-	CAdxElementSet(void);
-	~CAdxElementSet(void);
+	AdxElementSet(void);
+	~AdxElementSet(void);
 
 	int     m_ID;		// ID(TSV_PRE)
 	CString m_NameAdx;	// AdxÉfÅ[É^è„ÇÃñºèÃ
@@ -25,6 +25,6 @@ public:
 
 	std::vector<int>	m_vElementIndex;
 
-	//bool Compare(const CAdxElementSet* a, const CAdxElementSet* b) { if (a->m_ID < b->m_ID) { return true; } else { return false; } }
+	//bool Compare(const AdxElementSet* a, const AdxElementSet* b) { if (a->m_ID < b->m_ID) { return true; } else { return false; } }
 };
 

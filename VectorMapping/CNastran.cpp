@@ -2,12 +2,12 @@
 #include "CNastran.h"
 #include "GeneralFunction.h"
 
-CNastranNode::CNastranNode()
+NastranNode::NastranNode()
 {
 	m_Area = 0.0;
 }
 
-CNastranNode::~CNastranNode()
+NastranNode::~NastranNode()
 {
 }
 
@@ -15,7 +15,7 @@ CNastranNode::~CNastranNode()
 // 012345678901234567890123456789012345678901234567890123456789012345678901234567890
 // GRID*           16282904                -0.761911865E+03 0.278623383E+03F      1
 // *      1 0.951755142E+01
-int CNastranNode::Read(CString& line1, CString& line2)
+int NastranNode::Read(CString& line1, CString& line2)
 {
 	CString sid, scoord_x, scoord_y, scoord_z;
 	
@@ -34,12 +34,12 @@ int CNastranNode::Read(CString& line1, CString& line2)
 	return 0;
 }
 
-CNastranElement::CNastranElement()
+NastranElement::NastranElement()
 {
 	m_Area = 0.0;
 }
 
-CNastranElement::~CNastranElement()
+NastranElement::~NastranElement()
 {
 }
 
@@ -48,7 +48,7 @@ CNastranElement::~CNastranElement()
 // CTRIA3  17245527       2163397611632467916324683
 // CQUAD4  17591331       316290559162905581629106316291075
 // CBEAM        706       1   88558   88559
-int CNastranElement::Read(const CString& line)
+int NastranElement::Read(const CString& line)
 {
 	CString stype, sid;
 	CString snode_id[4];
@@ -90,16 +90,16 @@ int CNastranElement::Read(const CString& line)
 	return 0;
 }
 
-CNastran::CNastran()
+NastranModel::NastranModel()
 {
 	m_LogFile = NULL;
 }
 
-CNastran::~CNastran()
+NastranModel::~NastranModel()
 {
 }
 
-void CNastran::RemoveAll()
+void NastranModel::RemoveAll()
 {
 	m_vNode.clear();
 	m_vElement.clear();
@@ -108,7 +108,7 @@ void CNastran::RemoveAll()
 	m_LogFile = NULL;
 }
 
-void CNastran::LogWrite( CString& msg )
+void NastranModel::LogWrite( CString& msg )
 {
 	if ( m_LogFile != NULL ) {
 		m_LogFile->WriteString( msg );
@@ -122,7 +122,7 @@ void CNastran::LogWrite( CString& msg )
 // CTRIA3  17245527       2163397611632467916324683
 // CQUAD4  17591331       316290559162905581629106316291075
 // 12345678901234567890123456789012345678901234567890123456789012345678901234567890
-int CNastran::ReadNastranFile(const CString& fpath)
+int NastranModel::ReadNastranFile(const CString& fpath)
 {
 
 	CStdioFile		cFile;
@@ -133,8 +133,8 @@ int CNastran::ReadNastranFile(const CString& fpath)
 	CStringArray	words;
 	int				rc = 0;
 
-	std::unique_ptr<CNastranNode>	crnt_node;
-	std::unique_ptr<CNastranElement> crnt_element;
+	std::unique_ptr<NastranNode>	crnt_node;
+	std::unique_ptr<NastranElement> crnt_element;
 
 	RemoveAll();
 
@@ -162,7 +162,7 @@ int CNastran::ReadNastranFile(const CString& fpath)
 			}
 			line_count++;
 
-			crnt_node.reset(new CNastranNode);
+			crnt_node.reset(new NastranNode);
 
 			if (crnt_node->Read(line, line2) != 0) {
 				msg.Format(_T(" #ERROR フォーマット異常あり(%d)行目\n"), line_count);
@@ -175,7 +175,7 @@ int CNastran::ReadNastranFile(const CString& fpath)
 		}
 		else if (line.Left(6) == "CTRIA3") {
 
-			crnt_element.reset(new CNastranElement);
+			crnt_element.reset(new NastranElement);
 
 			if (crnt_element->Read(line) != 0) {
 				msg.Format(_T(" #ERROR フォーマット異常あり(%d)行目\n"), line_count);
@@ -188,7 +188,7 @@ int CNastran::ReadNastranFile(const CString& fpath)
 		}
 		else if (line.Left(6) == "CQUAD4") {
 
-			crnt_element.reset(new CNastranElement);
+			crnt_element.reset(new NastranElement);
 
 			if (crnt_element->Read(line) != 0) {
 				msg.Format(_T(" #ERROR フォーマット異常あり(%d)行目\n"), line_count);
@@ -200,7 +200,7 @@ int CNastran::ReadNastranFile(const CString& fpath)
 		}
 		else if (line.Left(5) == "CBEAM") {
 
-			crnt_element.reset(new CNastranElement);
+			crnt_element.reset(new NastranElement);
 
 			if (crnt_element->Read(line) != 0) {
 				msg.Format(_T(" #ERROR フォーマット異常あり(%d)行目\n"), line_count);
@@ -223,22 +223,22 @@ int CNastran::ReadNastranFile(const CString& fpath)
 	return 0;
 }
 
-int CNastran::Indexing()
+int NastranModel::Indexing()
 {
 	m_mNodeIDtoIndex.clear();
 	for ( int i=0; i<m_vNode.size(); i++ ) {
-		CNastranNode& n = *(m_vNode[i]);
+		NastranNode& n = *(m_vNode[i]);
 		m_mNodeIDtoIndex[n.m_ID] = i;
 	}
 
 	m_mElementIDtoIndex.clear();
 	for ( int i=0; i<m_vElement.size(); i++ ) {
-		CNastranElement& e = *(m_vElement[i]);
+		NastranElement& e = *(m_vElement[i]);
 		m_mElementIDtoIndex[e.m_ID] = i;
 	}
 
 	for (int i = 0; i<m_vElement.size(); i++) {
-		CNastranElement& e = *(m_vElement[i]);
+		NastranElement& e = *(m_vElement[i]);
 		int node_cnt = 0;
 		if (e.m_type == CTRIA3) {
 			node_cnt = 3;
@@ -254,7 +254,7 @@ int CNastran::Indexing()
 	return 0;
 }
 
-int CNastran::ReadNormalVectorFile(const CString& fpath)
+int NastranModel::ReadNormalVectorFile(const CString& fpath)
 {
 
 	CStdioFile		cFile;
@@ -306,7 +306,7 @@ int CNastran::ReadNormalVectorFile(const CString& fpath)
 			}
 
 			int index = (*it).second;
-			CNastranNode& n = *(m_vNode[index]);
+			NastranNode& n = *(m_vNode[index]);
 
 			n.m_NormalPressureVector.x = _ttof(words[1]);
 			n.m_NormalPressureVector.y = _ttof(words[2]);
@@ -319,7 +319,7 @@ int CNastran::ReadNormalVectorFile(const CString& fpath)
 	return 0;
 }
 
-int CNastran::ReadTangentVectorFile(const CString& fpath)
+int NastranModel::ReadTangentVectorFile(const CString& fpath)
 {
 
 	CStdioFile		cFile;
@@ -371,7 +371,7 @@ int CNastran::ReadTangentVectorFile(const CString& fpath)
 			}
 
 			int index = (*it).second;
-			CNastranNode& n = *(m_vNode[index]);
+			NastranNode& n = *(m_vNode[index]);
 
 			n.m_TangentPressureVector.x = _ttof(words[1]);
 			n.m_TangentPressureVector.y = _ttof(words[2]);
@@ -385,21 +385,21 @@ int CNastran::ReadTangentVectorFile(const CString& fpath)
 }
 
 // ノード毎の荷重ベクトルを求める
-int CNastran::ForceCalc()
+int NastranModel::ForceCalc()
 {
 
 	// ノードの担当面積を求める
 	for (int i=0; i<m_vElement.size(); i++ ) {
 
-		CNastranElement& e = *(m_vElement[i]);
+		NastranElement& e = *(m_vElement[i]);
 
 		// 要素面積を求める
 
 		if ( e.m_type == CTRIA3 ) {
 
-			CNastranNode& n0 = *(m_vNode[e.m_NodeIndex[0]]);
-			CNastranNode& n1 = *(m_vNode[e.m_NodeIndex[1]]);
-			CNastranNode& n2 = *(m_vNode[e.m_NodeIndex[2]]);
+			NastranNode& n0 = *(m_vNode[e.m_NodeIndex[0]]);
+			NastranNode& n1 = *(m_vNode[e.m_NodeIndex[1]]);
+			NastranNode& n2 = *(m_vNode[e.m_NodeIndex[2]]);
 
 			e.m_Area = AreaTriangle(n0.m_Coord, n1.m_Coord, n2.m_Coord);
 
@@ -410,10 +410,10 @@ int CNastran::ForceCalc()
 
 		} else if ( e.m_type == CQUAD4 ) {
 
-			CNastranNode& n0 = *(m_vNode[e.m_NodeIndex[0]]);
-			CNastranNode& n1 = *(m_vNode[e.m_NodeIndex[1]]);
-			CNastranNode& n2 = *(m_vNode[e.m_NodeIndex[2]]);
-			CNastranNode& n3 = *(m_vNode[e.m_NodeIndex[3]]);
+			NastranNode& n0 = *(m_vNode[e.m_NodeIndex[0]]);
+			NastranNode& n1 = *(m_vNode[e.m_NodeIndex[1]]);
+			NastranNode& n2 = *(m_vNode[e.m_NodeIndex[2]]);
+			NastranNode& n3 = *(m_vNode[e.m_NodeIndex[3]]);
 
 			e.m_Area = AreaQuad(n0.m_Coord, n1.m_Coord, n2.m_Coord, n3.m_Coord);
 
@@ -425,8 +425,8 @@ int CNastran::ForceCalc()
 
 		} else if ( e.m_type == CBEAM ) {
 
-			CNastranNode& n0 = *(m_vNode[e.m_NodeIndex[0]]);
-			CNastranNode& n1 = *(m_vNode[e.m_NodeIndex[1]]);
+			NastranNode& n0 = *(m_vNode[e.m_NodeIndex[0]]);
+			NastranNode& n1 = *(m_vNode[e.m_NodeIndex[1]]);
 
 			double seg_length = 0.0;
 			seg_length = n0.m_Coord.Distance(n1.m_Coord);
@@ -442,7 +442,7 @@ int CNastran::ForceCalc()
 
 	// 荷重を計算
 	for ( int i=0; i<m_vNode.size(); i++ ) {
-		CNastranNode& n = *(m_vNode[i]);
+		NastranNode& n = *(m_vNode[i]);
 		n.m_PressureVector = n.m_NormalPressureVector + n.m_TangentPressureVector;
 		n.m_ForceVector = n.m_PressureVector * n.m_Area * 1000.0;	// 単位:(N)
 	}
@@ -450,7 +450,7 @@ int CNastran::ForceCalc()
 	return 0;
 }
 
-int CNastran::Dump_N(CString& fpath)
+int NastranModel::Dump_N(CString& fpath)
 {
 	BOOL			ret;
 	CStdioFile		oFile;
@@ -465,7 +465,7 @@ int CNastran::Dump_N(CString& fpath)
 	// 要素情報出力
 	/*
 	for (int i = 0; i < m_vElement.size(); i++) {
-		CNastranElement& e = *(m_vElement[i]);
+		NastranElement& e = *(m_vElement[i]);
 		buf.Format(_T("E ID(%8d) ,%12.7f\n"), e.m_ID, e.m_Area);
 		oFile.WriteString(buf);
 	}
@@ -477,7 +477,7 @@ int CNastran::Dump_N(CString& fpath)
 
 	// ノード情報出力
 	for (int i = 0; i < m_vNode.size(); i++) {
-		CNastranNode& n = *(m_vNode[i]);
+		NastranNode& n = *(m_vNode[i]);
 		buf.Format(_T("%8d,%12.7f,%12.7f,%12.7f,%12.7f,%12.7f,%12.7f,%12.7f,%12.7f,%12.7f,%12.7f,%12.7f,%12.7f,%12.7f\n"), 
 			n.m_ID,
 			n.m_Coord.x, n.m_Coord.y, n.m_Coord.z,
@@ -494,7 +494,7 @@ int CNastran::Dump_N(CString& fpath)
 	return 0;
 }
 
-int CNastran::Dump_E(CString& fpath)
+int NastranModel::Dump_E(CString& fpath)
 {
 	BOOL			ret;
 	CStdioFile		oFile;
@@ -512,7 +512,7 @@ int CNastran::Dump_E(CString& fpath)
 
 	// 要素情報出力
 	for (int i = 0; i < m_vElement.size(); i++) {
-		CNastranElement& e = *(m_vElement[i]);
+		NastranElement& e = *(m_vElement[i]);
 		buf.Format(_T("%8d,%12.7f\n"), e.m_ID, e.m_Area);
 		oFile.WriteString(buf);
 	}
@@ -524,7 +524,7 @@ int CNastran::Dump_E(CString& fpath)
 
 	// ノード情報出力
 	for (int i = 0; i < m_vNode.size(); i++) {
-		CNastranNode& n = *(m_vNode[i]);
+		NastranNode& n = *(m_vNode[i]);
 		buf.Format(_T("NODE_ID(%8d),%12.7f,%12.7f,%12.7f,%12.7f,%12.7f,%12.7f,%12.7f,%12.7f,%12.7f,%12.7f,%12.7f,%12.7f,%12.7f\n"),
 			n.m_ID,
 			n.m_Coord.x, n.m_Coord.y, n.m_Coord.z,
@@ -542,7 +542,7 @@ int CNastran::Dump_E(CString& fpath)
 	return 0;
 }
 
-bool CNastran::IsEmpty()
+bool NastranModel::IsEmpty()
 {
 	if (m_vNode.size() > 0) {
 		return false;
@@ -552,12 +552,12 @@ bool CNastran::IsEmpty()
 	}
 }
 
-int  CNastran::GetTotalForce(CMzPoint& force)
+int  NastranModel::GetTotalForce(CMzPoint& force)
 {
 	CMzPoint total_force(0.0, 0.0, 0.0);
 
 	for (int i = 0; i < m_vNode.size(); i++) {
-		CNastranNode& n = *(m_vNode[i]);
+		NastranNode& n = *(m_vNode[i]);
 		total_force += n.m_ForceVector;
 	}
 
