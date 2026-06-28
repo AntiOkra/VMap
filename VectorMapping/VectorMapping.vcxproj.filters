@@ -33,7 +33,7 @@
     <ClInclude Include="Resource.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Adx.h">
+    <ClInclude Include="AdxModel.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="AdxElement.h">
@@ -48,10 +48,10 @@
     <ClInclude Include="AdxNodeSet.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="AreaMap.h">
+    <ClInclude Include="SpatialGrid.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="CNastran.h">
+    <ClInclude Include="NastranModel.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="GeneralFunction.h">
@@ -60,7 +60,7 @@
     <ClInclude Include="MzPoint.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="SurfaceNode.h">
+    <ClInclude Include="SurfaceNodeMap.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="SortParameter.h">
@@ -77,7 +77,7 @@
     <ClCompile Include="stdafx.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Adx.cpp">
+    <ClCompile Include="AdxModel.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="AdxElement.cpp">
@@ -92,16 +92,16 @@
     <ClCompile Include="AdxNodeSet.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="AreaMap.cpp">
+    <ClCompile Include="SpatialGrid.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="CNastran.cpp">
+    <ClCompile Include="NastranModel.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="GeneralFunction.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="SurfaceNode.cpp">
+    <ClCompile Include="SurfaceNodeMap.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="SortParameter.cpp">

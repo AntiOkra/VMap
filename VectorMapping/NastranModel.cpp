@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "CNastran.h"
+#include "NastranModel.h"
 #include "GeneralFunction.h"
 
 NastranNode::NastranNode()

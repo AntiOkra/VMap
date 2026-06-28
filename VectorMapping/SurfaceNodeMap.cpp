@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "SurfaceNode.h"
+#include "SurfaceNodeMap.h"
 
 
 SurfaceNodeMap::SurfaceNodeMap()

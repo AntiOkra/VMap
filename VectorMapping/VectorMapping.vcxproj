@@ -185,31 +185,31 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Adx.h" />
+    <ClInclude Include="AdxModel.h" />
     <ClInclude Include="AdxElement.h" />
     <ClInclude Include="AdxElementSet.h" />
     <ClInclude Include="AdxNode.h" />
     <ClInclude Include="AdxNodeSet.h" />
-    <ClInclude Include="AreaMap.h" />
-    <ClInclude Include="CNastran.h" />
+    <ClInclude Include="SpatialGrid.h" />
+    <ClInclude Include="NastranModel.h" />
     <ClInclude Include="GeneralFunction.h" />
     <ClInclude Include="MzPoint.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="SortParameter.h" />
     <ClInclude Include="stdafx.h" />
-    <ClInclude Include="SurfaceNode.h" />
+    <ClInclude Include="SurfaceNodeMap.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="VectorMapping.h" />
     <ClInclude Include="VectorMappingDlg.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Adx.cpp" />
+    <ClCompile Include="AdxModel.cpp" />
     <ClCompile Include="AdxElement.cpp" />
     <ClCompile Include="AdxElementSet.cpp" />
     <ClCompile Include="AdxNode.cpp" />
     <ClCompile Include="AdxNodeSet.cpp" />
-    <ClCompile Include="AreaMap.cpp" />
-    <ClCompile Include="CNastran.cpp" />
+    <ClCompile Include="SpatialGrid.cpp" />
+    <ClCompile Include="NastranModel.cpp" />
     <ClCompile Include="GeneralFunction.cpp" />
     <ClCompile Include="SortParameter.cpp" />
     <ClCompile Include="stdafx.cpp">
@@ -218,7 +218,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="SurfaceNode.cpp" />
+    <ClCompile Include="SurfaceNodeMap.cpp" />
     <ClCompile Include="VectorMapping.cpp" />
     <ClCompile Include="VectorMappingDlg.cpp" />
   </ItemGroup>

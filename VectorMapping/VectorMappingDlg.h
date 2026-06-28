@@ -4,9 +4,9 @@
 
 #pragma once
 #include "afxwin.h"
-#include "Adx.h"
-#include "CNastran.h"
-#include "SurfaceNode.h"
+#include "AdxModel.h"
+#include "NastranModel.h"
+#include "SurfaceNodeMap.h"
 #include "afxcmn.h"
 #include "AdxElementSet.h"
 #include "SortParameter.h"

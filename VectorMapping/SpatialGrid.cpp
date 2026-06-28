@@ -1,5 +1,5 @@
 #include "StdAfx.h"
-#include "AreaMap.h"
+#include "SpatialGrid.h"
 
 bool SpatialGridCell::IsEmpty() const
 {

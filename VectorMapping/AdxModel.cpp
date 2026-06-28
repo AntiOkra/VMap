@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "Adx.h"
+#include "AdxModel.h"
 #include "GeneralFunction.h"
 #include <iterator>
 #include <regex>

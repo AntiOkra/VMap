@@ -10,8 +10,8 @@
 #include "AdxElement.h"
 #include "AdxElementSet.h"
 
-#include "AreaMap.h"
-#include "SurfaceNode.h"
+#include "SpatialGrid.h"
+#include "SurfaceNodeMap.h"
 
 class AdxModel
 {

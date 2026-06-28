@@ -3,9 +3,9 @@
 #include <memory>
 #include <vector>
 #include"AdxNode.h"
-#include"AreaMap.h"
+#include"SpatialGrid.h"
 #include"MzPoint.h"
-#include"CNastran.h"
+#include"NastranModel.h"
 
 class SurfaceNodeMap
 {

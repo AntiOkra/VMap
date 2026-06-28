@@ -10,7 +10,7 @@
 #include <locale.h>
 #include <algorithm>
 
-#include "Adx.h"
+#include "AdxModel.h"
 #include "AdxElementSet.h"
 
 #ifdef _DEBUG
