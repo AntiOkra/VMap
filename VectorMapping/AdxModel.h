@@ -12,6 +12,7 @@
 
 #include "SpatialGrid.h"
 #include "SurfaceNodeMap.h"
+#include "SurfaceFaceMap.h"
 
 class AdxModel
 {
@@ -34,6 +35,7 @@ public:
 	bool FindExistingFace(int& s, int& c, int& e, int& face_index);
 	int  ExtractSurfaceFaces(CString& es_name, std::vector<int>& vnode, std::vector<int>& vef);
 	int  ExtractSurfaceNodes(CStringArray& es_names, SurfaceNodeMap& surface_node);
+	int  ExtractSurfaceFaces(CStringArray& es_names, SurfaceFaceMap& surface_face);
 	int  ParseElementSetInfo(CString& nodeset_line, CString& name, int& id, CString& comment);
 	int  SortElementSets();
 

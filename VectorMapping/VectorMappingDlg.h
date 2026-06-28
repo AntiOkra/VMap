@@ -7,6 +7,7 @@
 #include "AdxModel.h"
 #include "NastranModel.h"
 #include "SurfaceNodeMap.h"
+#include "SurfaceFaceMap.h"
 #include "afxcmn.h"
 #include "AdxElementSet.h"
 #include "SortParameter.h"
@@ -42,6 +43,7 @@ public:
 	AdxModel			adx_model_;
 	NastranModel		nastran_model_;
 	SurfaceNodeMap	surface_node_map_;
+	SurfaceFaceMap	surface_face_map_;
 
 	CString		adx_path_;
 	CString		nastran_path_;

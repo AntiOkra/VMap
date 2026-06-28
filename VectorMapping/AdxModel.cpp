@@ -570,6 +570,45 @@ int AdxModel::ExtractSurfaceNodes(CStringArray& es_names, SurfaceNodeMap& surfac
 	return 0;
 }
 
+int AdxModel::ExtractSurfaceFaces(CStringArray& es_names, SurfaceFaceMap& surface_face)
+{
+	surface_face.Clear();
+
+	std::map<int, int> local_node_indices;
+	std::vector<int> surface_face_indices;
+
+	for (int i = 0; i < es_names.GetSize(); i++) {
+		CString name_element_set = es_names[i];
+		std::vector<int> vnode;
+		std::vector<int> vef;
+
+		if (ExtractSurfaceFaces(name_element_set, vnode, vef) != 0) {
+			return 1;
+		}
+
+		std::copy(vef.begin(), vef.end(), std::back_inserter(surface_face_indices));
+	}
+
+	for (int i = 0; i < static_cast<int>(surface_face_indices.size()); i++) {
+		AdxElementFace& face = *(element_faces_[surface_face_indices[i]]);
+		for (int j = 0; j < 3; j++) {
+			int adx_node_index = face.node_indices_[j];
+			if (local_node_indices.find(adx_node_index) == local_node_indices.end()) {
+				std::unique_ptr<AdxNode> new_node(new AdxNode);
+				new_node->Copy(*(nodes_[adx_node_index]));
+				new_node->force_vector_.Set(0.0, 0.0, 0.0);
+				local_node_indices[adx_node_index] = surface_face.AddNode(std::move(new_node));
+			}
+		}
+
+		surface_face.AddFace(
+			local_node_indices[face.node_indices_[0]],
+			local_node_indices[face.node_indices_[1]],
+			local_node_indices[face.node_indices_[2]]);
+	}
+
+	return surface_face.BuildGeometry();
+}
 int AdxModel::SortElementSets()
 {
 	return 0;

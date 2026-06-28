@@ -371,7 +371,7 @@ void CVectorMappingDlg::OnBnClickedOk()
 	}
 
 	nastran_model_.SetLogFile(&LogFile);
-	surface_node_map_.SetLogFile(&LogFile);
+	surface_face_map_.SetLogFile(&LogFile);
 
 	if (nastran_model_.ReadModelFile(nastran_path_) != 0) {
 		AfxMessageBox(_T("Nastranファイル読み込めませんでした"));
@@ -405,7 +405,7 @@ void CVectorMappingDlg::OnBnClickedOk()
 	}
 
 	// Adxファイルの表面ノードを取得
-	if (adx_model_.ExtractSurfaceNodes(v_name, surface_node_map_) != 0) {
+	if (adx_model_.ExtractSurfaceFaces(v_name, surface_face_map_) != 0) {
 		AfxMessageBox(_T("表面ノードを取得できませんでした"));
 		return;
 	}
@@ -413,11 +413,6 @@ void CVectorMappingDlg::OnBnClickedOk()
 		// AfxMessageBox(_T("表面ノードを取得できました"));
 	}
 
-	// エリアマップ
-	if (surface_node_map_.BuildSpatialGrid() != 0) {
-		AfxMessageBox(_T("ノードマップ作成エラーです"));
-		return;
-	}
 
 	CString dump_path;
 
@@ -426,7 +421,7 @@ void CVectorMappingDlg::OnBnClickedOk()
 	nastran_model_.Dump(dump_path);
 
 	dump_path = _T("dump_map_debug.txt");
-	surface_node_map_.Dump(dump_path);
+	surface_face_map_.Dump(dump_path);
 	*/
 
 	CMzPoint ratio;
@@ -443,14 +438,14 @@ void CVectorMappingDlg::OnBnClickedOk()
 	}
 
 	// マッピング
-	if (surface_node_map_.MapForces(nastran_model_, search_distance_, ratio) != 0) {
+	if (surface_face_map_.MapForces(nastran_model_, search_distance_, ratio) != 0) {
 		AfxMessageBox(_T("マッピング実行時エラーです"));
 		return;
 	}
 
 	// Forceデータ出力
 	CString process = _T("TEST");
-	if (surface_node_map_.ExportAdxForces(force_output_path_,process) != 0) {
+	if (surface_face_map_.ExportAdxForces(force_output_path_,process) != 0) {
 		AfxMessageBox(_T("Forceファイル出力ができませんでした"));
 	}
 
@@ -462,10 +457,10 @@ void CVectorMappingDlg::OnBnClickedOk()
 	buf.Format(_T("NASTRAN_FORCE:%10.3f,%10.3f,%10.3f\n"), nastran_force.x,nastran_force.y,nastran_force.z);
 	LogFile.WriteString(buf);
 
-	buf.Format(_T("MAPPED_FORCE:%10.3f,%10.3f,%10.3f\n"), surface_node_map_.MappedForce().x, surface_node_map_.MappedForce().y, surface_node_map_.MappedForce().z);
+	buf.Format(_T("MAPPED_FORCE:%10.3f,%10.3f,%10.3f\n"), surface_face_map_.MappedForce().x, surface_face_map_.MappedForce().y, surface_face_map_.MappedForce().z);
 	LogFile.WriteString(buf);
 
-	buf.Format(_T("LOSSED_FORCE:%10.3f,%10.3f,%10.3f\n"), surface_node_map_.LossForce().x, surface_node_map_.LossForce().y, surface_node_map_.LossForce().z);
+	buf.Format(_T("LOSSED_FORCE:%10.3f,%10.3f,%10.3f\n"), surface_face_map_.LossForce().x, surface_face_map_.LossForce().y, surface_face_map_.LossForce().z);
 	LogFile.WriteString(buf);
 
 	LogFile.Close();
@@ -735,10 +730,10 @@ void CVectorMappingDlg::OnBnClickedButtonExec()
 
 	//　初期化
 	nastran_model_.Clear();
-	surface_node_map_.Clear();
+	surface_face_map_.Clear();
 
 	nastran_model_.SetLogFile(&log_file_);
-	surface_node_map_.SetLogFile(&log_file_);
+	surface_face_map_.SetLogFile(&log_file_);
 
 	if (LoadNastranInputs(nastran_model_) != 0) {
 		return;
@@ -751,27 +746,22 @@ void CVectorMappingDlg::OnBnClickedButtonExec()
 	}
 
 	// Adxファイルの表面ノードを取得
-	if (adx_model_.ExtractSurfaceNodes(v_name, surface_node_map_) != 0) {
+	if (adx_model_.ExtractSurfaceFaces(v_name, surface_face_map_) != 0) {
 		AfxMessageBox(_T("表面ノードを取得できませんでした"));
 		return;
 	}
 
-	// エリアマップ
-	if (surface_node_map_.BuildSpatialGrid() != 0) {
-		AfxMessageBox(_T("ノードマップ作成エラーです"));
-		return;
-	}
 
 	CMzPoint ratio = CurrentMappingRatio();
 
-	if (surface_node_map_.MapForces(nastran_model_, search_distance_, ratio) != 0) {
+	if (surface_face_map_.MapForces(nastran_model_, search_distance_, ratio) != 0) {
 		AfxMessageBox(_T("マッピング実行時エラーです"));
 		return;
 	}
 
 	// Forceデータ出力
 	CString process = _T("AdvcStep-99999");
-	if (surface_node_map_.ExportAdxForces(force_output_path_, process) != 0) {
+	if (surface_face_map_.ExportAdxForces(force_output_path_, process) != 0) {
 		AfxMessageBox(_T("Forceファイル出力ができませんでした"));
 		return;
 	}
@@ -790,7 +780,7 @@ void CVectorMappingDlg::OnBnClickedButtonExec()
 	CString m_path;
 	mod_str = _T("_map.csv");
 	ModFileName(force_output_path_, '.', mod_str, m_path);
-	surface_node_map_.DumpNodes(m_path);
+	surface_face_map_.DumpNodes(m_path);
 
 	CString buf;
 
@@ -821,10 +811,10 @@ void CVectorMappingDlg::OnBnClickedButtonExec()
 	buf.Format(_T("NASTRAN_荷重(kN) (係数処理後)   :%10.3f,%10.3f,%10.3f\n"), nastran_force.x / 1000.0 * ratio.x, nastran_force.y / 1000.0 * ratio.y, nastran_force.z / 1000.0 * ratio.z);
 	log_file_.WriteString(buf);
 
-	buf.Format(_T("マッピングされた荷重(kN)        :%10.3f,%10.3f,%10.3f\n"), surface_node_map_.MappedForce().x / 1000.0, surface_node_map_.MappedForce().y / 1000.0, surface_node_map_.MappedForce().z / 1000.0);
+	buf.Format(_T("マッピングされた荷重(kN)        :%10.3f,%10.3f,%10.3f\n"), surface_face_map_.MappedForce().x / 1000.0, surface_face_map_.MappedForce().y / 1000.0, surface_face_map_.MappedForce().z / 1000.0);
 	log_file_.WriteString(buf);
 
-	buf.Format(_T("マッピングされなかった荷重(kN)  :%10.3f,%10.3f,%10.3f\n"), surface_node_map_.LossForce().x / 1000.0, surface_node_map_.LossForce().y / 1000.0, surface_node_map_.LossForce().z / 1000.0);
+	buf.Format(_T("マッピングされなかった荷重(kN)  :%10.3f,%10.3f,%10.3f\n"), surface_face_map_.LossForce().x / 1000.0, surface_face_map_.LossForce().y / 1000.0, surface_face_map_.LossForce().z / 1000.0);
 	log_file_.WriteString(buf);
 
 	buf.Format(_T("-------------------------------------------------------\n"));
@@ -833,7 +823,7 @@ void CVectorMappingDlg::OnBnClickedButtonExec()
 	log_file_.Flush();
 
 	nastran_model_.Clear();
-	surface_node_map_.Clear();
+	surface_face_map_.Clear();
 
 	AfxMessageBox(_T("マッピング完了しました"));
 }

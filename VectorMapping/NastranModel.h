@@ -16,6 +16,8 @@ public:
 
 	void SetLogFile(CStdioFile* log_file);
 	const std::vector<std::unique_ptr<NastranNode>>& Nodes() const;
+	const std::vector<std::unique_ptr<NastranElement>>& Elements() const;
+	const NastranNode& NodeAt(int index) const;
 
 	void Clear();
 	int  ReadModelFile(const CString& fpath);

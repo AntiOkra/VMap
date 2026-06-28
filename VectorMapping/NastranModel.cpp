@@ -21,6 +21,15 @@ const std::vector<std::unique_ptr<NastranNode>>& NastranModel::Nodes() const
 }
 
 
+const std::vector<std::unique_ptr<NastranElement>>& NastranModel::Elements() const
+{
+	return elements_;
+}
+
+const NastranNode& NastranModel::NodeAt(int index) const
+{
+	return *(nodes_[index]);
+}
 void NastranModel::Clear()
 {
 	nodes_.clear();

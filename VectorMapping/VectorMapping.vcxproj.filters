@@ -72,6 +72,9 @@
     <ClInclude Include="SurfaceNodeMap.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="SurfaceFaceMap.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
     <ClInclude Include="SortParameter.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
@@ -120,6 +123,9 @@
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="SurfaceNodeMap.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="SurfaceFaceMap.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="SortParameter.cpp">
