@@ -40,8 +40,10 @@ private:
 	CStdioFile* log_file_;
 
 	int FindNearestNastranElement(NastranModel& nastran, CMzPoint& point, double upper_limit, const NastranElement** element, double& distance);
+	int DetermineSubdivisionCount(NastranModel& nastran, SurfaceFace& face, double upper_limit);
 	CMzPoint CalculateElementPressure(NastranModel& nastran, const NastranElement& element);
 	CMzPoint CalculateElementCentroid(NastranModel& nastran, const NastranElement& element);
 	CMzPoint CalculateFaceSamplePoint(SurfaceFace& face, const double barycentric_weights[3]);
 	void AddWeightedSampleForce(SurfaceFace& face, CMzPoint& force, const double barycentric_weights[3]);
+	void MapSubtriangleSample(NastranModel& nastran, SurfaceFace& face, double upper_limit, CMzPoint ratio, const double barycentric_weights[3], double sample_area);
 };

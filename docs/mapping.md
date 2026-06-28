@@ -6,6 +6,7 @@
 - `v1.1.0`: node-to-node mapping distributes each NASTRAN nodal force to the nearest ADX surface nodes with inverse-distance weights.
 - `v1.2.0`: adds the first conservative surface-to-surface transfer path in `SurfaceFaceMap`.
 - `v1.3.0`: improves `SurfaceFaceMap` with three integration samples per ADX triangle.
+- `v1.4.0`: adaptively subdivides each ADX triangle and samples every subtriangle centroid.
 
 ## v1.2 surface transfer
 
@@ -45,3 +46,29 @@ using the same barycentric weights.
 Compared with the `v1.2.0` centroid-only sample, this reduces false matches when
 one ADX triangle crosses multiple NASTRAN triangles and gives smoother nodal force
 distribution on larger ADX faces.
+
+## v1.4 adaptive subtriangle sampling
+
+`SurfaceFaceMap` now estimates the local mesh-density difference for each ADX
+surface triangle:
+
+```text
+area_ratio = adx_face_area / nearest_nastran_element_area
+subdivision_count = ceil(sqrt(area_ratio))
+```
+
+The subdivision count is clamped to `2..10`. A count of `n` splits the ADX
+triangle into `n * n` small triangles. Each small triangle contributes one
+centroid sample with area:
+
+```text
+sample_area = adx_face_area / (n * n)
+```
+
+Each sample point independently finds its nearest NASTRAN shell element, converts
+that element pressure into a sample force, and distributes the force to the ADX
+triangle nodes using the sample centroid barycentric weights.
+
+This improves cases where one large ADX triangle covers many small NASTRAN
+triangles because the mapper can now sample multiple source pressure regions
+inside the same target ADX triangle.

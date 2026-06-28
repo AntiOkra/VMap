@@ -74,31 +74,42 @@ int SurfaceFaceMap::MapForces(NastranModel& nastran, double upper_limit, CMzPoin
 
 	for (int i = 0; i < static_cast<int>(faces_.size()); i++) {
 		SurfaceFace& face = faces_[i];
-		const double sample_points[3][3] = {
-			{ 2.0 / 3.0, 1.0 / 6.0, 1.0 / 6.0 },
-			{ 1.0 / 6.0, 2.0 / 3.0, 1.0 / 6.0 },
-			{ 1.0 / 6.0, 1.0 / 6.0, 2.0 / 3.0 }
-		};
-		const double sample_area = face.area_ / 3.0;
+		int subdivision_count = DetermineSubdivisionCount(nastran, face, upper_limit);
+		if (subdivision_count <= 0) {
+			continue;
+		}
 
-		for (int sample_index = 0; sample_index < 3; sample_index++) {
-			const double* barycentric_weights = sample_points[sample_index];
-			CMzPoint sample_point = CalculateFaceSamplePoint(face, barycentric_weights);
-			const NastranElement* source_element = NULL;
-			double distance = 0.0;
+		double sample_area = face.area_ / static_cast<double>(subdivision_count * subdivision_count);
+		double denominator = static_cast<double>(subdivision_count);
 
-			if (FindNearestNastranElement(nastran, sample_point, upper_limit, &source_element, distance) != 0) {
-				continue;
+		for (int i0 = 0; i0 < subdivision_count; i0++) {
+			for (int i1 = 0; i1 < subdivision_count - i0; i1++) {
+				double up_triangle[3][3] = {
+					{ (denominator - i0 - i1) / denominator, i0 / denominator, i1 / denominator },
+					{ (denominator - i0 - i1 - 1.0) / denominator, (i0 + 1.0) / denominator, i1 / denominator },
+					{ (denominator - i0 - i1 - 1.0) / denominator, i0 / denominator, (i1 + 1.0) / denominator }
+				};
+				double up_centroid[3] = {
+					(up_triangle[0][0] + up_triangle[1][0] + up_triangle[2][0]) / 3.0,
+					(up_triangle[0][1] + up_triangle[1][1] + up_triangle[2][1]) / 3.0,
+					(up_triangle[0][2] + up_triangle[1][2] + up_triangle[2][2]) / 3.0
+				};
+				MapSubtriangleSample(nastran, face, upper_limit, ratio, up_centroid, sample_area);
+
+				if (i0 + i1 < subdivision_count - 1) {
+					double down_triangle[3][3] = {
+						{ (denominator - i0 - i1 - 1.0) / denominator, (i0 + 1.0) / denominator, i1 / denominator },
+						{ (denominator - i0 - i1 - 2.0) / denominator, (i0 + 1.0) / denominator, (i1 + 1.0) / denominator },
+						{ (denominator - i0 - i1 - 1.0) / denominator, i0 / denominator, (i1 + 1.0) / denominator }
+					};
+					double down_centroid[3] = {
+						(down_triangle[0][0] + down_triangle[1][0] + down_triangle[2][0]) / 3.0,
+						(down_triangle[0][1] + down_triangle[1][1] + down_triangle[2][1]) / 3.0,
+						(down_triangle[0][2] + down_triangle[1][2] + down_triangle[2][2]) / 3.0
+					};
+					MapSubtriangleSample(nastran, face, upper_limit, ratio, down_centroid, sample_area);
+				}
 			}
-
-			CMzPoint pressure = CalculateElementPressure(nastran, *source_element);
-			CMzPoint sample_force;
-			sample_force.x = pressure.x * sample_area * 1000.0 * ratio.x;
-			sample_force.y = pressure.y * sample_area * 1000.0 * ratio.y;
-			sample_force.z = pressure.z * sample_area * 1000.0 * ratio.z;
-
-			AddWeightedSampleForce(face, sample_force, barycentric_weights);
-			mapped_force_ += sample_force;
 		}
 	}
 
@@ -134,6 +145,31 @@ int SurfaceFaceMap::FindNearestNastranElement(NastranModel& nastran, CMzPoint& p
 
 	distance = sqrt(min_distance2);
 	return 0;
+}
+
+int SurfaceFaceMap::DetermineSubdivisionCount(NastranModel& nastran, SurfaceFace& face, double upper_limit)
+{
+	const NastranElement* source_element = NULL;
+	double distance = 0.0;
+	if (FindNearestNastranElement(nastran, face.centroid_, upper_limit, &source_element, distance) != 0) {
+		return 0;
+	}
+
+	if (source_element->area_ <= 0.0 || face.area_ <= 0.0) {
+		return 0;
+	}
+
+	double area_ratio = face.area_ / source_element->area_;
+	int subdivision_count = static_cast<int>(ceil(sqrt(area_ratio)));
+
+	if (subdivision_count < 2) {
+		subdivision_count = 2;
+	}
+	if (subdivision_count > 10) {
+		subdivision_count = 10;
+	}
+
+	return subdivision_count;
 }
 
 CMzPoint SurfaceFaceMap::CalculateElementPressure(NastranModel& nastran, const NastranElement& element)
@@ -194,6 +230,26 @@ void SurfaceFaceMap::AddWeightedSampleForce(SurfaceFace& face, CMzPoint& force, 
 		node_force.z = force.z * barycentric_weights[i];
 		nodes_[face.node_indices_[i]]->force_vector_ += node_force;
 	}
+}
+
+void SurfaceFaceMap::MapSubtriangleSample(NastranModel& nastran, SurfaceFace& face, double upper_limit, CMzPoint ratio, const double barycentric_weights[3], double sample_area)
+{
+	CMzPoint sample_point = CalculateFaceSamplePoint(face, barycentric_weights);
+	const NastranElement* source_element = NULL;
+	double distance = 0.0;
+
+	if (FindNearestNastranElement(nastran, sample_point, upper_limit, &source_element, distance) != 0) {
+		return;
+	}
+
+	CMzPoint pressure = CalculateElementPressure(nastran, *source_element);
+	CMzPoint sample_force;
+	sample_force.x = pressure.x * sample_area * 1000.0 * ratio.x;
+	sample_force.y = pressure.y * sample_area * 1000.0 * ratio.y;
+	sample_force.z = pressure.z * sample_area * 1000.0 * ratio.z;
+
+	AddWeightedSampleForce(face, sample_force, barycentric_weights);
+	mapped_force_ += sample_force;
 }
 
 int SurfaceFaceMap::ExportAdxForces(CString& opath, CString& process)
