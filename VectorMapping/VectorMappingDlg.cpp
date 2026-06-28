@@ -414,7 +414,7 @@ void CVectorMappingDlg::OnBnClickedOk()
 	}
 
 	// エリアマップ
-	if (m_SurfaceNode.MakeAreaMap() != 0) {
+	if (m_SurfaceNode.BuildSpatialGrid() != 0) {
 		AfxMessageBox(_T("ノードマップ作成エラーです"));
 		return;
 	}
@@ -443,7 +443,7 @@ void CVectorMappingDlg::OnBnClickedOk()
 	}
 
 	// マッピング
-	if (m_SurfaceNode.Mapping(m_Nastran, m_SearchDistance, ratio ) != 0) {
+	if (m_SurfaceNode.MapForces(m_Nastran, m_SearchDistance, ratio) != 0) {
 		AfxMessageBox(_T("マッピング実行時エラーです"));
 		return;
 	}
@@ -735,7 +735,7 @@ void CVectorMappingDlg::OnBnClickedButtonExec()
 
 	//　初期化
 	m_Nastran.RemoveAll();
-	m_SurfaceNode.RemoveAll();
+	m_SurfaceNode.Clear();
 
 	m_Nastran.m_LogFile = &m_LogFile;
 	m_SurfaceNode.m_LogFile = &m_LogFile;
@@ -757,14 +757,14 @@ void CVectorMappingDlg::OnBnClickedButtonExec()
 	}
 
 	// エリアマップ
-	if (m_SurfaceNode.MakeAreaMap() != 0) {
+	if (m_SurfaceNode.BuildSpatialGrid() != 0) {
 		AfxMessageBox(_T("ノードマップ作成エラーです"));
 		return;
 	}
 
 	CMzPoint ratio = CurrentMappingRatio();
 
-	if (m_SurfaceNode.Mapping(m_Nastran, m_SearchDistance, ratio) != 0) {
+	if (m_SurfaceNode.MapForces(m_Nastran, m_SearchDistance, ratio) != 0) {
 		AfxMessageBox(_T("マッピング実行時エラーです"));
 		return;
 	}
@@ -833,7 +833,7 @@ void CVectorMappingDlg::OnBnClickedButtonExec()
 	m_LogFile.Flush();
 
 	m_Nastran.RemoveAll();
-	m_SurfaceNode.RemoveAll();
+	m_SurfaceNode.Clear();
 
 	AfxMessageBox(_T("マッピング完了しました"));
 }

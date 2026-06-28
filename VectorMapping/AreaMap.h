@@ -1,47 +1,38 @@
 #pragma once
 
-#include<vector>
-#include"MzPoint.h"
-#include"AdxNode.h"
+#include <memory>
+#include <vector>
+#include "MzPoint.h"
+#include "AdxNode.h"
 
-class CArea
+class SpatialGridCell
 {
 public:
-	CArea(void);
-	~CArea(void);
+	std::vector<CAdxNode*> nodes_;
 
-	std::vector<CAdxNode*> m_vNode;
-
-	int  NearestNode(CMzPoint& p, CAdxNode** p_node, double& dst);
-	bool IsEmpty();
+	int FindNearestNode(CMzPoint& point, CAdxNode** node, double& distance);
+	bool IsEmpty() const;
 };
 
-
-class CAreaMap
+class SpatialGrid
 {
 public:
-	CAreaMap(void);
-	~CAreaMap(void);
+	std::vector<SpatialGridCell> cells_;
 
-	std::vector<CArea*> m_vArea;
+	int min_index_[3];
+	int max_index_[3];
+	int x_count_;
+	int y_count_;
+	int z_count_;
 
-	int min_index[3];
-	int max_index[3];
-	int ixno;
-	int iyno;
-	int izno;
+	CMzPoint origin_;
+	double cell_size_;
 
-	CMzPoint o;
-	double area_size;
+	int Build(std::vector<std::unique_ptr<CAdxNode>>& nodes, double pitch);
+	int Initialize(CMzPoint& min_point, CMzPoint& max_point, double pitch);
+	int GetCellCoordinates(CMzPoint& point, int& x, int& y, int& z);
+	int AddNode(CAdxNode* node);
+	int Clear();
 
-	int MakeAreaMap(std::vector<CAdxNode*>&	m_vNode, double pitch);
-	int Init( CMzPoint& pmin, CMzPoint& pmax, double pitch );
-	int GetIndex( CMzPoint& p, int& ix, int& iy, int& iz);
-	//int GetArea( int& ix, int& iy, int& iz, CArea* p_area);
-	int Entry(CAdxNode* n);
-	int RemoveAll();
-
-	int GetArrayIndex(int& ix, int& iy, int& iz, int& area_index);
-
+	int GetCellIndex(int& x, int& y, int& z, int& cell_index);
 };
-

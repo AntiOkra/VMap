@@ -1,6 +1,7 @@
 #pragma once
 
-#include<vector>
+#include <memory>
+#include <vector>
 #include"AdxNode.h"
 #include"AreaMap.h"
 #include"MzPoint.h"
@@ -12,21 +13,21 @@ public:
 	CSurfaceNode();
 	~CSurfaceNode();
 
-	std::vector<CAdxNode*>	m_vNode;
-	CAreaMap				m_AreaMap;
+	std::vector<std::unique_ptr<CAdxNode>>	nodes_;
+	SpatialGrid				spatial_grid_;
 	CMzPoint				m_MappedForce;
 	CMzPoint				m_LossForce;
 
 	CStdioFile*				m_LogFile;
 
-	int Mapping(CNastran& nas,double upr_liimt,CMzPoint ratio);
-	int NearestNode(CMzPoint& p, double upr_limit, CAdxNode** p_node, double& distance );
-	int NearestNodeSimple(CMzPoint& p, double upr_limit, CAdxNode** p_node, double& distance);
-	int MakeAreaMap();
+	int MapForces(CNastran& nastran, double upper_limit, CMzPoint ratio);
+	int FindNearestNode(CMzPoint& point, double upper_limit, CAdxNode** node, double& distance);
+	int FindNearestNodeBruteForce(CMzPoint& point, double upper_limit, CAdxNode** node, double& distance);
+	int BuildSpatialGrid();
 	int ExportAdxForce(CString& fpath, CString& process);
 	void LogWrite(CString &msg);
 	int DumpNode(CString& fpath);
 	int Dump(CString& fpath);
-	void RemoveAll();
+	void Clear();
 };
 

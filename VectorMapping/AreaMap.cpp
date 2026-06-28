@@ -1,204 +1,151 @@
 #include "StdAfx.h"
 #include "AreaMap.h"
 
-CArea::CArea(void)
+bool SpatialGridCell::IsEmpty() const
 {
+	return nodes_.empty();
 }
 
-CArea::~CArea(void)
+int SpatialGrid::Build(std::vector<std::unique_ptr<CAdxNode>>& nodes, double pitch)
 {
-}
+	CMzPoint min_point;
+	CMzPoint max_point;
 
-bool CArea::IsEmpty()
-{
-	if (m_vNode.size() > 0) {
-		return false;
-	}
-	else {
-		return true;
-	}
-}
+	min_point.Set(1E100, 1E100, 1E100);
+	max_point.Set(-1E100, -1E100, -1E100);
 
-CAreaMap::CAreaMap(void)
-{
-}
+	for (int i = 0; i < static_cast<int>(nodes.size()); i++) {
+		CAdxNode& node = *(nodes[i]);
+		if (node.m_Coord.x < min_point.x) min_point.x = node.m_Coord.x;
+		if (node.m_Coord.y < min_point.y) min_point.y = node.m_Coord.y;
+		if (node.m_Coord.z < min_point.z) min_point.z = node.m_Coord.z;
 
-
-CAreaMap::~CAreaMap(void)
-{
-}
-
-int CAreaMap::MakeAreaMap(std::vector<CAdxNode*>& m_vNode, double pitch)
-{
-	// min, max Šm”F
-	CMzPoint pmin;
-	CMzPoint pmax;
-
-	pmin.Set(1E100, 1E100, 1E100);
-	pmax.Set(-1E100, -1E100, -1E100);
-
-	for (int i = 0; i < m_vNode.size(); i++) {
-		CAdxNode& n = *(m_vNode[i]);
-		if (n.m_Coord.x < pmin.x) pmin.x = n.m_Coord.x;
-		if (n.m_Coord.y < pmin.y) pmin.y = n.m_Coord.y;
-		if (n.m_Coord.z < pmin.z) pmin.z = n.m_Coord.z;
-
-		if (n.m_Coord.x > pmax.x) pmax.x = n.m_Coord.x;
-		if (n.m_Coord.y > pmax.y) pmax.y = n.m_Coord.y;
-		if (n.m_Coord.z > pmax.z) pmax.z = n.m_Coord.z;
+		if (node.m_Coord.x > max_point.x) max_point.x = node.m_Coord.x;
+		if (node.m_Coord.y > max_point.y) max_point.y = node.m_Coord.y;
+		if (node.m_Coord.z > max_point.z) max_point.z = node.m_Coord.z;
 	}
 
-	Init(pmin, pmax, pitch);
+	Initialize(min_point, max_point, pitch);
 
-	// Entry
-	for (int i = 0; i < m_vNode.size(); i++) {
-		Entry(m_vNode[i]);
+	for (int i = 0; i < static_cast<int>(nodes.size()); i++) {
+		AddNode(nodes[i].get());
 	}
 
 	return 0;
 }
 
-
-int CAreaMap::Init( CMzPoint& pmin, CMzPoint& pmax, double pitch )
+int SpatialGrid::Initialize(CMzPoint& min_point, CMzPoint& max_point, double pitch)
 {
-	int rc = 0;
+	Clear();
 
-	RemoveAll();
+	cell_size_ = pitch;
 
-	area_size = pitch;
+	GetCellCoordinates(min_point, min_index_[0], min_index_[1], min_index_[2]);
+	GetCellCoordinates(max_point, max_index_[0], max_index_[1], max_index_[2]);
 
-	rc = GetIndex( pmin, min_index[0], min_index[1], min_index[2] );
-	rc = GetIndex( pmax, max_index[0], max_index[1], max_index[2] );
+	x_count_ = max_index_[0] - min_index_[0] + 1;
+	y_count_ = max_index_[1] - min_index_[1] + 1;
+	z_count_ = max_index_[2] - min_index_[2] + 1;
 
-	CArea *new_area;
+	cells_.resize(x_count_ * y_count_ * z_count_);
 
-	for (int iz=min_index[2]; iz<=max_index[2]; iz++ ) {
-		for (int iy=min_index[1]; iy<=max_index[1]; iy++ ) {
-			for (int ix=min_index[0]; ix<=max_index[0]; ix++ ) {
-				new_area = new CArea;			
-				m_vArea.push_back(new_area);
-			}
+	return 0;
+}
+
+int SpatialGrid::GetCellCoordinates(CMzPoint& point, int& x, int& y, int& z)
+{
+	x = int(floor(point.x / cell_size_));
+	y = int(floor(point.y / cell_size_));
+	z = int(floor(point.z / cell_size_));
+
+	return 0;
+}
+
+int SpatialGrid::GetCellIndex(int& x, int& y, int& z, int& cell_index)
+{
+	cell_index = -1;
+
+	if (x < min_index_[0] || x > max_index_[0]) {
+		return 1;
+	}
+
+	if (y < min_index_[1] || y > max_index_[1]) {
+		return 1;
+	}
+
+	if (z < min_index_[2] || z > max_index_[2]) {
+		return 1;
+	}
+
+	cell_index = (z - min_index_[2]) * x_count_ * y_count_ + (y - min_index_[1]) * x_count_ + (x - min_index_[0]);
+
+	return 0;
+}
+
+int SpatialGrid::Clear()
+{
+	cells_.clear();
+
+	x_count_ = 0;
+	y_count_ = 0;
+	z_count_ = 0;
+	cell_size_ = 0.0;
+	origin_.Set(0.0, 0.0, 0.0);
+
+	for (int i = 0; i < 3; i++) {
+		min_index_[i] = 0;
+		max_index_[i] = 0;
+	}
+
+	return 0;
+}
+
+int SpatialGrid::AddNode(CAdxNode* node)
+{
+	int x, y, z;
+
+	if (GetCellCoordinates(node->m_Coord, x, y, z) != 0) {
+		return 1;
+	}
+
+	int cell_index;
+	if (GetCellIndex(x, y, z, cell_index) != 0) {
+		return 1;
+	}
+
+	if (cell_index < 0 || cell_index >= static_cast<int>(cells_.size())) {
+		return 1;
+	}
+
+	SpatialGridCell& cell = cells_[cell_index];
+	cell.nodes_.push_back(node);
+
+	return 0;
+}
+
+int SpatialGridCell::FindNearestNode(CMzPoint& point, CAdxNode** node, double& distance)
+{
+	*node = NULL;
+	distance = 1E100;
+
+	CAdxNode* nearest_node = NULL;
+	double min_distance2 = 1E100;
+
+	for (int i = 0; i < static_cast<int>(nodes_.size()); i++) {
+		CAdxNode& candidate = *(nodes_[i]);
+		double distance2 = point.DistanceSquared(candidate.m_Coord);
+		if (distance2 < min_distance2) {
+			nearest_node = nodes_[i];
+			min_distance2 = distance2;
 		}
 	}
 
-	ixno = max_index[0] - min_index[0] + 1;
-	iyno = max_index[1] - min_index[1] + 1;
-	izno = max_index[2] - min_index[2] + 1;
-
-	return 0;
-}
-
-int CAreaMap::GetIndex( CMzPoint& p, int& ix, int& iy, int& iz)
-{
-	ix = int(floor(p.x/area_size));
-	iy = int(floor(p.y/area_size));
-	iz = int(floor(p.z/area_size));
-
-	return 0;
-}
-
-/*
-int CAreaMap::GetArea( int& ix, int& iy, int& iz, CArea* p_area)
-{
-	int area_index;
-
-	if (GetArrayIndex( ix, iy, iz, area_index )==0 ) {
-		p_area = m_vArea[area_index];
+	if (nearest_node != NULL) {
+		*node = nearest_node;
+		distance = sqrt(min_distance2);
 		return 0;
-	} else {
-		p_area = NULL;
-		return 1;
-	}
-}
-*/
-
-int CAreaMap::GetArrayIndex( int& ix, int& iy, int& iz, int& area_index )
-{
-	area_index = -1;
-
-	if ( ix<min_index[0] || ix>max_index[0] ) {
-		return 1;
 	}
 
-	if ( iy<min_index[1] || iy>max_index[1] ) {
-		return 1;
-	}
-
-	if ( iz<min_index[2] || iz>max_index[2] ) {
-		return 1;
-	}
-
-	area_index = ( iz - min_index[2] ) * ixno * iyno + ( iy - min_index[1] ) * ixno + ( ix - min_index[0] );
-
-	return 0;
-}
-
-int CAreaMap::RemoveAll()
-{
-	for ( auto itr = m_vArea.begin(); itr != m_vArea.end(); ++itr) {
-		delete *itr;
-	}
-	m_vArea.clear();
-
-	ixno = 0;
-	iyno = 0;
-	izno = 0;
-	
-	for ( int i=0; i<3; i++ ) {
-		min_index[i] = 0;
-		max_index[i] = 0;
-	}
-
-	return 0;
-}
-
-int CAreaMap::Entry(CAdxNode* n)
-{
-	int ix, iy, iz;
-
-	if (GetIndex(n->m_Coord, ix, iy, iz) != 0) {
-		return 1;
-	}
-
-	int area_index;
-	if (GetArrayIndex(ix, iy, iz, area_index) != 0) {
-		return 1;
-	}
-
-	if (area_index < 0 || area_index >= m_vArea.size() ) {
-		return 1;
-	}
-
-	CArea& area = *(m_vArea[area_index]);
-
-	area.m_vNode.push_back(n);
-
-	return 0;
-}
-
-int CArea::NearestNode(CMzPoint& p, CAdxNode** p_node, double& dst)
-{
-	*p_node = NULL;
-	dst = 1E100;
-
-	CAdxNode* p_tmp_node = NULL;
-	double min_dst2 = 1E100;
-
-	for (int i = 0; i < m_vNode.size(); i++) {
-		CAdxNode& n = *(m_vNode[i]);
-		double tmp_dst2 = p.DistanceSquared(n.m_Coord);
-		if (tmp_dst2 < min_dst2) {
-			p_tmp_node = m_vNode[i];
-			min_dst2 = tmp_dst2;
-		}
-	}
-
-	if (p_tmp_node != NULL) {
-		*p_node = p_tmp_node;
-		dst = sqrt(min_dst2);
-		return 0;
-	} else {
-		dst = 1E10;
-		return 1;
-	}
+	distance = 1E10;
+	return 1;
 }

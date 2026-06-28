@@ -583,10 +583,10 @@ int CAdx::ExtractSurfaceNode(CStringArray& es_names, CSurfaceNode& surface_node)
 
 		// 2ŽŸƒm[ƒh‚Ì‚Ý’Šo
 		//if (m_vNode[adx_node_index]->m_Type == Node_2nd) {
-			CAdxNode *new_node = new CAdxNode;
+			std::unique_ptr<CAdxNode> new_node(new CAdxNode);
 			new_node->Copy(*(m_vNode[adx_node_index]));
 			new_node->m_ForceVector.Set(0.0, 0.0, 0.0);
-			surface_node.m_vNode.push_back(new_node);
+			surface_node.nodes_.push_back(std::move(new_node));
 		//}
 	}
 
