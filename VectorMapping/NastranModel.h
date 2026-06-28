@@ -7,7 +7,7 @@
 
 #include"MzPoint.h"
 
-typedef enum { CTRIA3, CQUAD4, CBEAM } NastranElementType;
+enum class NastranElementType { Triangle, Quad, Beam };
 
 class NastranNode
 {

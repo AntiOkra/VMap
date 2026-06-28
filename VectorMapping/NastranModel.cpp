@@ -60,19 +60,19 @@ int NastranElement::Read(const CString& line)
 	sid = line.Mid(8, 8);
 
 	if ( stype=="CTRIA3" ) {
-		type_ = CTRIA3;
+		type_ = NastranElementType::Triangle;
 		snode_id[0] = line.Mid(24,8);
 		snode_id[1] = line.Mid(32,8);
 		snode_id[2] = line.Mid(40,8);
 		snode_id[3] = "-1";
 	} else if ( stype=="CQUAD4" ) {
-		type_ = CQUAD4;
+		type_ = NastranElementType::Quad;
 		snode_id[0] = line.Mid(24,8);
 		snode_id[1] = line.Mid(32,8);
 		snode_id[2] = line.Mid(40,8);
 		snode_id[3] = line.Mid(48,8);
 	} else if ( stype=="CBEAM" ) {
-		type_ = CBEAM;
+		type_ = NastranElementType::Beam;
 		snode_id[0] = line.Mid(24,8);
 		snode_id[1] = line.Mid(32,8);
 		snode_id[2] = "-1";
@@ -227,7 +227,7 @@ int NastranModel::Indexing()
 	for (int i = 0; i<elements_.size(); i++) {
 		NastranElement& e = *(elements_[i]);
 		int node_cnt = 0;
-		if (e.type_ == CTRIA3) {
+		if (e.type_ == NastranElementType::Triangle) {
 			node_cnt = 3;
 		}
 		else {
@@ -309,7 +309,7 @@ int NastranModel::AccumulateElementAreas()
 
 		NastranElement& e = *(elements_[i]);
 
-		if ( e.type_ == CTRIA3 ) {
+		if ( e.type_ == NastranElementType::Triangle ) {
 
 			NastranNode& n0 = *(nodes_[e.node_indices_[0]]);
 			NastranNode& n1 = *(nodes_[e.node_indices_[1]]);
@@ -322,7 +322,7 @@ int NastranModel::AccumulateElementAreas()
 			n1.area_ += node_area;
 			n2.area_ += node_area;
 
-		} else if ( e.type_ == CQUAD4 ) {
+		} else if ( e.type_ == NastranElementType::Quad ) {
 
 			NastranNode& n0 = *(nodes_[e.node_indices_[0]]);
 			NastranNode& n1 = *(nodes_[e.node_indices_[1]]);
@@ -337,7 +337,7 @@ int NastranModel::AccumulateElementAreas()
 			n2.area_ += node_area;
 			n3.area_ += node_area;
 
-		} else if ( e.type_ == CBEAM ) {
+		} else if ( e.type_ == NastranElementType::Beam ) {
 
 			NastranNode& n0 = *(nodes_[e.node_indices_[0]]);
 			NastranNode& n1 = *(nodes_[e.node_indices_[1]]);

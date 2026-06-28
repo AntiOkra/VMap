@@ -4,6 +4,8 @@
 #include <iterator>
 #include <regex>
 
+int IncludeFilePath(CString& parent_path, CString& include_file, CString& include_path);
+
 
 AdxModel::AdxModel()
 {
@@ -43,6 +45,103 @@ void AdxModel::FinishElementSet(std::unique_ptr<AdxElementSet>& element_set)
 	}
 }
 
+int AdxModel::HandleReadDirective(CString& fpath, CString& line, CStringArray& words, ReadState& state)
+{
+	if (line.Left(1) != "$") {
+		return 0;
+	}
+
+	CString delimiters = _T(" =:");
+	SplitString(line, delimiters, words);
+
+	if (words[0] == "$Include") {
+		CString include_path;
+		IncludeFilePath(fpath, words[1], include_path);
+		Read(include_path);
+	}
+	else if (words[0] == "$Node") {
+		state = ReadState::Node;
+	}
+	else if (words[0] == "$Element" && words[1] == "3DQuadraticTetrahedron") {
+		state = ReadState::Element;
+	}
+
+	return 0;
+}
+
+int AdxModel::ReadNodeSectionLine(CString& line, CStringArray& words, std::unique_ptr<AdxNodeSet>& node_set, ReadState& state, bool& re_parse)
+{
+	CString delimiters = _T(" =:");
+	SplitString(line, delimiters, words);
+
+	if (line.Left(1) == "$") {
+		FinishNodeSet(node_set);
+		node_set.reset(NULL);
+		state = ReadState::None;
+		re_parse = true;
+		return 0;
+	}
+
+	if (words[0] == "node_set") {
+		node_set.reset(new AdxNodeSet);
+		node_set->adx_name_ = words[1];
+		return 0;
+	}
+
+	if (words[0] == "dimension" || words[0] == "index_format" || words[0] == "format") {
+		return 0;
+	}
+
+	std::unique_ptr<AdxNode> node(new AdxNode);
+	node->Read(words);
+	nodes_.push_back(std::move(node));
+
+	if (node_set != NULL) {
+		node_set->node_indices_.push_back(static_cast<int>(nodes_.size()) - 1);
+	}
+
+	return 0;
+}
+
+int AdxModel::ReadElementSectionLine(CString& line, CStringArray& words, std::unique_ptr<AdxElementSet>& element_set, ReadState& state, bool& re_parse)
+{
+	CString delimiters = _T(" =:");
+	SplitString(line, delimiters, words);
+
+	if (line.Left(1) == "$") {
+		FinishElementSet(element_set);
+		element_set.reset(NULL);
+		state = ReadState::None;
+		re_parse = true;
+		return 0;
+	}
+
+	if (words[0] == "element_set") {
+		element_set.reset(new AdxElementSet);
+		CString tmp_name;
+		CString tmp_comment;
+		int tmp_id;
+		ParseElementSetInfo(line, tmp_name, tmp_id, tmp_comment);
+		element_set->adx_name_ = tmp_name;
+		element_set->user_name_ = tmp_comment;
+		element_set->id_ = tmp_id;
+		return 0;
+	}
+
+	if (words[0] == "num_nodes_per_element" || words[0] == "index_format" || words[0] == "format") {
+		return 0;
+	}
+
+	std::unique_ptr<AdxElement> element(new AdxElement);
+	element->Read(words);
+	elements_.push_back(std::move(element));
+
+	if (element_set != NULL) {
+		element_set->element_indices_.push_back(static_cast<int>(elements_.size()) - 1);
+	}
+
+	return 0;
+}
 int IncludeFilePath( CString& parent_path, CString& include_file, CString& include_path )
 {
 	// parent folder
@@ -107,196 +206,50 @@ int AdxModel::ParseElementSetInfo(CString& nodeset_line, CString& name, int& id,
 
 int AdxModel::Read(CString& fpath)
 {
-	CStdioFile		cFile;
-	BOOL			ret=FALSE;
-	CString			delimiters;
-	CString			line;
-	CStringArray	words;
-	int				rc=0;
-	bool			is_eof = false;
-	bool			re_parse = false;
-	std::unique_ptr<AdxNodeSet>		crnt_node_set;
-	std::unique_ptr<AdxElementSet>	crnt_element_set;
-	std::unique_ptr<AdxElement>		crnt_element;
-	std::unique_ptr<AdxNode>			crnt_node;
-	enum adx_state { None, Node, Element } crnt_state;
+	CStdioFile cFile;
+	CString line;
+	CStringArray words;
+	bool is_eof = false;
+	bool re_parse = false;
+	std::unique_ptr<AdxNodeSet> crnt_node_set;
+	std::unique_ptr<AdxElementSet> crnt_element_set;
+	ReadState crnt_state = ReadState::None;
 
-	// RemoveAll();
-
-	ret = cFile.Open(fpath, CFile::modeRead | CFile::shareDenyNone);
-	if (ret == FALSE) {
+	if (cFile.Open(fpath, CFile::modeRead | CFile::shareDenyNone) == FALSE) {
 		return 1;
 	}
 
-	crnt_state = None;
-	delimiters = " =:";
-	is_eof = false;
-	re_parse = false;
-
-	while (!is_eof)	{
-
-		// 読み込み 最終行に$EOFがあるとして処理
+	while (!is_eof) {
 		if (re_parse) {
 			re_parse = false;
-		} else {
-			if (cFile.ReadString(line) == FALSE) {
-				is_eof = true;
-				line = "$EOF";
-			}
+		}
+		else if (cFile.ReadString(line) == FALSE) {
+			is_eof = true;
+			line = "$EOF";
 		}
 
-		// 注釈スキップ
-		if (line.Left(1) == "#") {
+		if (line.Left(1) == "#" || line.Trim() == "") {
 			continue;
 		}
-
-		// 空白行スキップ
-		if (line.Trim() == "") {
-			continue;
-		}
-
-		// 単語分割
-		//SplitString(line, delimiters, words);
-		//if (words.GetSize() == 0) {
-		//	continue;
-		//}
 
 		switch (crnt_state) {
-
-		case None:
-
-			if (line.Left(1) == "$") {
-
-				// 単語分割
-				SplitString(line, delimiters, words);
-
-				// タイプ別読み込み
-				if (words[0] == "$Include") {
-					CString include_path;
-					IncludeFilePath(fpath, words[1], include_path);
-					Read(include_path);
-					continue;
-				}
-				else if (words[0] == "$Node") {
-					crnt_state = Node;
-					continue;
-				}
-				else if (words[0] == "$Element" && words[1] == "3DQuadraticTetrahedron") {
-					crnt_state = Element;
-					continue;
-				}
-
-			}
-
+		case ReadState::None:
+			HandleReadDirective(fpath, line, words, crnt_state);
 			break;
 
-		case Node:
-
-			// 単語分割
-			SplitString(line, delimiters, words);
-
-			// Nodeセクション終了
-			if (line.Left(1) == "$") {
-				FinishNodeSet(crnt_node_set);
-				crnt_node_set.reset(NULL);	
-				crnt_state = None;
-				re_parse = true;
-				continue;
-			}
-
-			// node_set
-			if (words[0] == "node_set") {
-				crnt_node_set.reset(new AdxNodeSet);
-				crnt_node_set->adx_name_ = words[1];
-				continue;
-			}
-
-			// dimension
-			if (words[0] == "dimension") {
-				continue;
-			}
-
-			// index_format
-			if (words[0] == "index_format") {
-				continue;
-			}
-
-			// format
-			if (words[0] == "format") {
-				continue;
-			}
-
-			// node data
-			crnt_node.reset(new AdxNode);
-			crnt_node->Read(words);
-			nodes_.push_back(std::move(crnt_node));
-
-			if (crnt_node_set != NULL) {
-				crnt_node_set->node_indices_.push_back(static_cast<int>(nodes_.size()) - 1);
-			}
-
+		case ReadState::Node:
+			ReadNodeSectionLine(line, words, crnt_node_set, crnt_state, re_parse);
 			break;
 
-		case Element:
-
-			// 単語分割
-			SplitString(line, delimiters, words);
-
-			// Elementセクション終了
-			if (line.Left(1) == "$") {
-				FinishElementSet(crnt_element_set);
-				crnt_element_set.reset(NULL);
-				crnt_state = None;
-				re_parse = true;
-				continue;
-			}
-
-			// element_set
-			if (words[0] == "element_set") {
-				crnt_element_set.reset(new AdxElementSet);
-				CString tmp_name;
-				CString tmp_comment;
-				int     tmp_id;
-				ParseElementSetInfo(line, tmp_name, tmp_id, tmp_comment);
-				crnt_element_set->adx_name_ = tmp_name;
-				crnt_element_set->user_name_ = tmp_comment;
-				crnt_element_set->id_ = tmp_id;
-				continue;
-			}
-
-			// num_nodes_per_elementt
-			if (words[0] == "num_nodes_per_element") {
-				continue;
-			}
-
-			// index_format
-			if (words[0] == "index_format") {
-				continue;
-			}
-
-			// format
-			if (words[0] == "format") {
-				continue;
-			}
-
-			// element_data
-			crnt_element.reset(new AdxElement);
-			crnt_element->Read(words);
-			elements_.push_back(std::move(crnt_element));
-
-			if (crnt_element_set != NULL) {
-				crnt_element_set->element_indices_.push_back(static_cast<int>(elements_.size()) - 1);
-			}
-
+		case ReadState::Element:
+			ReadElementSectionLine(line, words, crnt_element_set, crnt_state, re_parse);
 			break;
-		}	
+		}
 	}
 
 	cFile.Close();
-
 	return 0;
 }
-
 void AdxModel::Clear()
 {
 	node_sets_.clear();

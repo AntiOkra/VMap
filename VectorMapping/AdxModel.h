@@ -38,6 +38,8 @@ public:
 	int  SortElementSets();
 
 private:
+	enum class ReadState { None, Node, Element };
+
 	std::vector<std::unique_ptr<AdxNode>>			nodes_;
 	std::vector<std::unique_ptr<AdxNodeSet>>		node_sets_;
 
@@ -51,6 +53,9 @@ private:
 
 	void FinishNodeSet(std::unique_ptr<AdxNodeSet>& node_set);
 	void FinishElementSet(std::unique_ptr<AdxElementSet>& element_set);
+	int HandleReadDirective(CString& fpath, CString& line, CStringArray& words, ReadState& state);
+	int ReadNodeSectionLine(CString& line, CStringArray& words, std::unique_ptr<AdxNodeSet>& node_set, ReadState& state, bool& re_parse);
+	int ReadElementSectionLine(CString& line, CStringArray& words, std::unique_ptr<AdxElementSet>& element_set, ReadState& state, bool& re_parse);
 };
 
 bool CompareAdxElementSet(AdxElementSet* e1, AdxElementSet* e2);
