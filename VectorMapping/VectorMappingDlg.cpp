@@ -370,8 +370,8 @@ void CVectorMappingDlg::OnBnClickedOk()
 		return;
 	}
 
-	nastran_model_.log_file_ = &LogFile;
-	surface_node_map_.log_file_ = &LogFile;
+	nastran_model_.SetLogFile(&LogFile);
+	surface_node_map_.SetLogFile(&LogFile);
 
 	if (nastran_model_.ReadModelFile(nastran_path_) != 0) {
 		AfxMessageBox(_T("Nastranファイル読み込めませんでした"));
@@ -399,7 +399,7 @@ void CVectorMappingDlg::OnBnClickedOk()
 
 	for (int i = 0; i<m_ListElementSet.GetCount(); i++) {
 		if (m_ListElementSet.GetSel(i)) {
-			CString& name = (adx_model_.element_sets_[i])->adx_name_;
+			CString& name = adx_model_.ElementSetAt(i).adx_name_;
 			v_name.Add(name);
 		}
 	}
@@ -462,10 +462,10 @@ void CVectorMappingDlg::OnBnClickedOk()
 	buf.Format(_T("NASTRAN_FORCE:%10.3f,%10.3f,%10.3f\n"), nastran_force.x,nastran_force.y,nastran_force.z);
 	LogFile.WriteString(buf);
 
-	buf.Format(_T("MAPPED_FORCE:%10.3f,%10.3f,%10.3f\n"), surface_node_map_.mapped_force_.x, surface_node_map_.mapped_force_.y, surface_node_map_.mapped_force_.z);
+	buf.Format(_T("MAPPED_FORCE:%10.3f,%10.3f,%10.3f\n"), surface_node_map_.MappedForce().x, surface_node_map_.MappedForce().y, surface_node_map_.MappedForce().z);
 	LogFile.WriteString(buf);
 
-	buf.Format(_T("LOSSED_FORCE:%10.3f,%10.3f,%10.3f\n"), surface_node_map_.loss_force_.x, surface_node_map_.loss_force_.y, surface_node_map_.loss_force_.z);
+	buf.Format(_T("LOSSED_FORCE:%10.3f,%10.3f,%10.3f\n"), surface_node_map_.LossForce().x, surface_node_map_.LossForce().y, surface_node_map_.LossForce().z);
 	LogFile.WriteString(buf);
 
 	LogFile.Close();
@@ -557,18 +557,18 @@ void CVectorMappingDlg::OnBnClickedButtonAdxread()
 		}
 
 		// IDでソート
-		//sort(adx_model_.element_sets_.begin(), adx_model_.element_sets_.end(), AdxElementSet::Compare);
+		//sort element sets when a public ordering operation is added.
 
 		CString s_item;
-		for (int i = 0; i < adx_model_.element_sets_.size(); i++) {
-			AdxElementSet& es = *(adx_model_.element_sets_[i]);
+		for (int i = 0; i < adx_model_.ElementSetCount(); i++) {
+			AdxElementSet& es = adx_model_.ElementSetAt(i);
 			s_item.Format(_T("%-30s %-20s"), es.adx_name_.Trim(), es.user_name_.Trim());
 			//m_ListElementSet.InsertString(i, es.adx_name_ + " " + es.user_name_);
 			m_ListElementSet.InsertString(i, s_item);
 		}
 
-		for (int i = 0; i < adx_model_.element_sets_.size(); i++) {
-			ListInsertElementSet(i,*(adx_model_.element_sets_[i]));
+		for (int i = 0; i < adx_model_.ElementSetCount(); i++) {
+			ListInsertElementSet(i,adx_model_.ElementSetAt(i));
 		}
 
 		ControlEnable(true);
@@ -737,8 +737,8 @@ void CVectorMappingDlg::OnBnClickedButtonExec()
 	nastran_model_.Clear();
 	surface_node_map_.Clear();
 
-	nastran_model_.log_file_ = &log_file_;
-	surface_node_map_.log_file_ = &log_file_;
+	nastran_model_.SetLogFile(&log_file_);
+	surface_node_map_.SetLogFile(&log_file_);
 
 	if (LoadNastranInputs(nastran_model_) != 0) {
 		return;
@@ -821,10 +821,10 @@ void CVectorMappingDlg::OnBnClickedButtonExec()
 	buf.Format(_T("NASTRAN_荷重(kN) (係数処理後)   :%10.3f,%10.3f,%10.3f\n"), nastran_force.x / 1000.0 * ratio.x, nastran_force.y / 1000.0 * ratio.y, nastran_force.z / 1000.0 * ratio.z);
 	log_file_.WriteString(buf);
 
-	buf.Format(_T("マッピングされた荷重(kN)        :%10.3f,%10.3f,%10.3f\n"), surface_node_map_.mapped_force_.x / 1000.0, surface_node_map_.mapped_force_.y / 1000.0, surface_node_map_.mapped_force_.z / 1000.0);
+	buf.Format(_T("マッピングされた荷重(kN)        :%10.3f,%10.3f,%10.3f\n"), surface_node_map_.MappedForce().x / 1000.0, surface_node_map_.MappedForce().y / 1000.0, surface_node_map_.MappedForce().z / 1000.0);
 	log_file_.WriteString(buf);
 
-	buf.Format(_T("マッピングされなかった荷重(kN)  :%10.3f,%10.3f,%10.3f\n"), surface_node_map_.loss_force_.x / 1000.0, surface_node_map_.loss_force_.y / 1000.0, surface_node_map_.loss_force_.z / 1000.0);
+	buf.Format(_T("マッピングされなかった荷重(kN)  :%10.3f,%10.3f,%10.3f\n"), surface_node_map_.LossForce().x / 1000.0, surface_node_map_.LossForce().y / 1000.0, surface_node_map_.LossForce().z / 1000.0);
 	log_file_.WriteString(buf);
 
 	buf.Format(_T("-------------------------------------------------------\n"));

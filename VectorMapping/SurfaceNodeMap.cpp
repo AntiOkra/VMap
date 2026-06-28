@@ -12,6 +12,25 @@ SurfaceNodeMap::~SurfaceNodeMap()
 {
 	 spatial_grid_.Clear();
 }
+void SurfaceNodeMap::SetLogFile(CStdioFile* log_file)
+{
+	log_file_ = log_file;
+}
+
+void SurfaceNodeMap::AddNode(std::unique_ptr<AdxNode> node)
+{
+	nodes_.push_back(std::move(node));
+}
+
+const CMzPoint& SurfaceNodeMap::MappedForce() const
+{
+	return mapped_force_;
+}
+
+const CMzPoint& SurfaceNodeMap::LossForce() const
+{
+	return loss_force_;
+}
 
 int SurfaceNodeMap::BuildSpatialGrid()
 {
@@ -30,8 +49,9 @@ int SurfaceNodeMap::MapForces(NastranModel& nastran, double upper_limit, CMzPoin
 	double distance;
 	CString msg;
 
-	for (int i = 0; i < nastran.nodes_.size(); i++) {
-		NastranNode& n = *(nastran.nodes_[i]);
+	const auto& nastran_nodes = nastran.Nodes();
+	for (int i = 0; i < nastran_nodes.size(); i++) {
+		NastranNode& n = *(nastran_nodes[i]);
 
 		/* Check Code
 		{

@@ -26,7 +26,6 @@ public:
 
 	//int Read(CStringArray& words);
 	int Read(CString& line1, CString& line2);
-
 };
 
 class NastranElement
@@ -51,14 +50,9 @@ public:
 	NastranModel();
 	~NastranModel();
 
-	std::vector<std::unique_ptr<NastranNode>>			nodes_;
-	std::vector<std::unique_ptr<NastranElement>>		elements_;
+	void SetLogFile(CStdioFile* log_file);
+	const std::vector<std::unique_ptr<NastranNode>>& Nodes() const;
 
-	std::unordered_map<int, int>		node_id_to_index_;
-	std::unordered_map<int, int>		element_id_to_index_;
-
-	CStdioFile*				log_file_;
-	
 	void Clear();
 	int  ReadModelFile(const CString& fpath);
 	int ReadNormalPressureFile(const CString& fpath);		// Nastran deha nai kedo
@@ -73,6 +67,18 @@ public:
 	int  Indexing();
 	int  CalculateForces();
 
+private:
+	std::vector<std::unique_ptr<NastranNode>>			nodes_;
+	std::vector<std::unique_ptr<NastranElement>>		elements_;
 
+	std::unordered_map<int, int>		node_id_to_index_;
+	std::unordered_map<int, int>		element_id_to_index_;
+
+	CStdioFile*				log_file_;
+
+	int ReadPressureFile(const CString& fpath, bool normal_pressure);
+	int ReadGridLine(CStdioFile& file, CString& line, int& line_count);
+	int ReadElementLine(const CString& line, int line_count);
+	int AccumulateElementAreas();
+	void CalculateNodeForces();
 };
-

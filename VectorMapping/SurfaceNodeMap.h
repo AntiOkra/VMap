@@ -13,12 +13,10 @@ public:
 	SurfaceNodeMap();
 	~SurfaceNodeMap();
 
-	std::vector<std::unique_ptr<AdxNode>>	nodes_;
-	SpatialGrid				spatial_grid_;
-	CMzPoint				mapped_force_;
-	CMzPoint				loss_force_;
-
-	CStdioFile*				log_file_;
+	void SetLogFile(CStdioFile* log_file);
+	void AddNode(std::unique_ptr<AdxNode> node);
+	const CMzPoint& MappedForce() const;
+	const CMzPoint& LossForce() const;
 
 	int MapForces(NastranModel& nastran, double upper_limit, CMzPoint ratio);
 	int FindNearestNode(CMzPoint& point, double upper_limit, AdxNode** node, double& distance);
@@ -29,5 +27,12 @@ public:
 	int DumpNodes(CString& fpath);
 	int Dump(CString& fpath);
 	void Clear();
-};
 
+private:
+	std::vector<std::unique_ptr<AdxNode>>	nodes_;
+	SpatialGrid				spatial_grid_;
+	CMzPoint				mapped_force_;
+	CMzPoint				loss_force_;
+
+	CStdioFile*				log_file_;
+};

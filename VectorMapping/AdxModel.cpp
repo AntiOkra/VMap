@@ -13,6 +13,35 @@ AdxModel::AdxModel()
 AdxModel::~AdxModel()
 {
 }
+int AdxModel::ElementSetCount() const
+{
+	return static_cast<int>(element_sets_.size());
+}
+
+AdxElementSet& AdxModel::ElementSetAt(int index)
+{
+	return *(element_sets_[index]);
+}
+
+const AdxElementSet& AdxModel::ElementSetAt(int index) const
+{
+	return *(element_sets_[index]);
+}
+
+void AdxModel::FinishNodeSet(std::unique_ptr<AdxNodeSet>& node_set)
+{
+	if (node_set.get() != NULL) {
+		node_sets_.push_back(std::move(node_set));
+	}
+}
+
+void AdxModel::FinishElementSet(std::unique_ptr<AdxElementSet>& element_set)
+{
+	if (element_set.get() != NULL) {
+		element_set_name_to_index_[element_set->adx_name_] = static_cast<int>(element_sets_.size());
+		element_sets_.push_back(std::move(element_set));
+	}
+}
 
 int IncludeFilePath( CString& parent_path, CString& include_file, CString& include_path )
 {
@@ -168,9 +197,7 @@ int AdxModel::Read(CString& fpath)
 
 			// Nodeセクション終了
 			if (line.Left(1) == "$") {
-				if (crnt_node_set.get() != NULL) {
-					node_sets_.push_back(std::move(crnt_node_set));
-				}
+				FinishNodeSet(crnt_node_set);
 				crnt_node_set.reset(NULL);	
 				crnt_state = None;
 				re_parse = true;
@@ -217,10 +244,7 @@ int AdxModel::Read(CString& fpath)
 
 			// Elementセクション終了
 			if (line.Left(1) == "$") {
-				if (crnt_element_set.get() != NULL) {
-					element_set_name_to_index_[crnt_element_set->adx_name_] = static_cast<int>(element_sets_.size());
-					element_sets_.push_back(std::move(crnt_element_set));
-				}
+				FinishElementSet(crnt_element_set);
 				crnt_element_set.reset(NULL);
 				crnt_state = None;
 				re_parse = true;
@@ -586,7 +610,7 @@ int AdxModel::ExtractSurfaceNodes(CStringArray& es_names, SurfaceNodeMap& surfac
 			std::unique_ptr<AdxNode> new_node(new AdxNode);
 			new_node->Copy(*(nodes_[adx_node_index]));
 			new_node->force_vector_.Set(0.0, 0.0, 0.0);
-			surface_node.nodes_.push_back(std::move(new_node));
+			surface_node.AddNode(std::move(new_node));
 		//}
 	}
 

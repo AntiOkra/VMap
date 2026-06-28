@@ -98,6 +98,16 @@ NastranModel::NastranModel()
 NastranModel::~NastranModel()
 {
 }
+void NastranModel::SetLogFile(CStdioFile* log_file)
+{
+	log_file_ = log_file;
+}
+
+const std::vector<std::unique_ptr<NastranNode>>& NastranModel::Nodes() const
+{
+	return nodes_;
+}
+
 
 void NastranModel::Clear()
 {
@@ -114,6 +124,43 @@ void NastranModel::WriteLog( CString& msg )
 		log_file_->WriteString( msg );
 	}
 }
+int NastranModel::ReadGridLine(CStdioFile& file, CString& line, int& line_count)
+{
+	CString line2;
+	CString msg;
+
+	if (!file.ReadString(line2)) {
+		msg.Format(_T(" #ERROR フォーマット異常あり(%d)行目\n"), line_count);
+		WriteLog(msg);
+		return 1;
+	}
+	line_count++;
+
+	std::unique_ptr<NastranNode> node(new NastranNode);
+	if (node->Read(line, line2) != 0) {
+		msg.Format(_T(" #ERROR フォーマット異常あり(%d)行目\n"), line_count);
+		WriteLog(msg);
+		return 1;
+	}
+
+	nodes_.push_back(std::move(node));
+	return 0;
+}
+
+int NastranModel::ReadElementLine(const CString& line, int line_count)
+{
+	CString msg;
+	std::unique_ptr<NastranElement> element(new NastranElement);
+
+	if (element->Read(line) != 0) {
+		msg.Format(_T(" #ERROR フォーマット異常あり(%d)行目\n"), line_count);
+		WriteLog(msg);
+		return 1;
+	}
+
+	elements_.push_back(std::move(element));
+	return 0;
+}
 
 //
 // 12345678901234567890123456789012345678901234567890123456789012345678901234567890
@@ -124,91 +171,32 @@ void NastranModel::WriteLog( CString& msg )
 // 12345678901234567890123456789012345678901234567890123456789012345678901234567890
 int NastranModel::ReadModelFile(const CString& fpath)
 {
-
-	CStdioFile		cFile;
-	BOOL			ret = FALSE;
-	CString			delimiters;
-	CString			line,line2;
-	CString			msg;
-	CStringArray	words;
-	int				rc = 0;
-
-	std::unique_ptr<NastranNode>	crnt_node;
-	std::unique_ptr<NastranElement> crnt_element;
+	CStdioFile cFile;
+	CString line;
+	CString msg;
 
 	Clear();
 
-	ret = cFile.Open(fpath, CFile::modeRead | CFile::shareDenyNone);
-	if (ret == FALSE) {
-		msg.Format(_T("ファイルがOpenできません(%s)\n"),fpath );
-		WriteLog( msg );
+	if (cFile.Open(fpath, CFile::modeRead | CFile::shareDenyNone) == FALSE) {
+		msg.Format(_T("ファイルがOpenできません(%s)\n"), fpath);
+		WriteLog(msg);
 		return 1;
 	}
-
-	delimiters = " =:";
 
 	int line_count = 0;
 
 	while (cFile.ReadString(line)) {
-
 		line_count++;
 
 		if (line.Left(5) == "GRID*") {
-
-			if (!cFile.ReadString(line2)) {
-				msg.Format(_T(" #ERROR フォーマット異常あり(%d)行目\n"), line_count);
-				WriteLog(msg);
+			if (ReadGridLine(cFile, line, line_count) != 0) {
 				return 1;
 			}
-			line_count++;
-
-			crnt_node.reset(new NastranNode);
-
-			if (crnt_node->Read(line, line2) != 0) {
-				msg.Format(_T(" #ERROR フォーマット異常あり(%d)行目\n"), line_count);
-				WriteLog(msg);
-				return 1;
-			}
-
-			nodes_.push_back(std::move(crnt_node));
-
 		}
-		else if (line.Left(6) == "CTRIA3") {
-
-			crnt_element.reset(new NastranElement);
-
-			if (crnt_element->Read(line) != 0) {
-				msg.Format(_T(" #ERROR フォーマット異常あり(%d)行目\n"), line_count);
-				WriteLog(msg);
+		else if (line.Left(6) == "CTRIA3" || line.Left(6) == "CQUAD4" || line.Left(5) == "CBEAM") {
+			if (ReadElementLine(line, line_count) != 0) {
 				return 1;
 			}
-
-			elements_.push_back(std::move(crnt_element));
-
-		}
-		else if (line.Left(6) == "CQUAD4") {
-
-			crnt_element.reset(new NastranElement);
-
-			if (crnt_element->Read(line) != 0) {
-				msg.Format(_T(" #ERROR フォーマット異常あり(%d)行目\n"), line_count);
-				WriteLog(msg);
-				return 1;
-			}
-
-			elements_.push_back(std::move(crnt_element));
-		}
-		else if (line.Left(5) == "CBEAM") {
-
-			crnt_element.reset(new NastranElement);
-
-			if (crnt_element->Read(line) != 0) {
-				msg.Format(_T(" #ERROR フォーマット異常あり(%d)行目\n"), line_count);
-				WriteLog(msg);
-				return 1;
-			}
-
-			elements_.push_back(std::move(crnt_element));
 		}
 	}
 
@@ -222,7 +210,6 @@ int NastranModel::ReadModelFile(const CString& fpath)
 
 	return 0;
 }
-
 int NastranModel::Indexing()
 {
 	node_id_to_index_.clear();
@@ -254,31 +241,25 @@ int NastranModel::Indexing()
 	return 0;
 }
 
-int NastranModel::ReadNormalPressureFile(const CString& fpath)
+int NastranModel::ReadPressureFile(const CString& fpath, bool normal_pressure)
 {
+	CStdioFile cFile;
+	CString delimiters;
+	CString line;
+	CString msg;
+	CStringArray words;
 
-	CStdioFile		cFile;
-	BOOL			ret = FALSE;
-	CString			delimiters;
-	CString			line;
-	CString			msg;
-	CStringArray	words;
-
-	//Clear();
-
-	ret = cFile.Open(fpath, CFile::modeRead | CFile::shareDenyNone);
-	if (ret == FALSE) {
-		msg.Format(_T("ファイルがOpenできません(%s)\n"),fpath );
-		WriteLog( msg );
+	if (cFile.Open(fpath, CFile::modeRead | CFile::shareDenyNone) == FALSE) {
+		msg.Format(_T("ファイルがOpenできません(%s)\n"), fpath);
+		WriteLog(msg);
 		return 1;
 	}
 
 	int line_count = 0;
 
-	// 9行スキップ
-	for ( int i=0; i<9; i++ ) {
+	for (int i = 0; i < 9; i++) {
 		line_count++;
-		if ( ! cFile.ReadString(line) ) {
+		if (!cFile.ReadString(line)) {
 			msg.Format(_T(" #ERROR フォーマット異常あり(%d)行目\n"), line_count);
 			WriteLog(msg);
 			return 1;
@@ -287,113 +268,46 @@ int NastranModel::ReadNormalPressureFile(const CString& fpath)
 
 	delimiters = " ";
 
-	// データ
 	while (cFile.ReadString(line)) {
-
 		line_count++;
+		SplitString(line, delimiters, words);
 
-		SplitString( line, delimiters, words );
-
-		if ( words.GetCount() == 4 ) {
-
-			int crnt_id = _ttoi(words[0]);
-
-			auto it =  node_id_to_index_.find(crnt_id);
-			if (it == node_id_to_index_.end() ) {
-				msg.Format(_T(" #ERROR ノードIDが見つかりません(%d)行目. ID=(%d)\n"), line_count,crnt_id);
+		if (words.GetCount() == 4) {
+			int current_id = _ttoi(words[0]);
+			auto it = node_id_to_index_.find(current_id);
+			if (it == node_id_to_index_.end()) {
+				msg.Format(_T(" #ERROR ノードIDが見つかりません(%d)行目. ID=(%d)\n"), line_count, current_id);
 				WriteLog(msg);
 				return 1;
 			}
 
-			int index = (*it).second;
-			NastranNode& n = *(nodes_[index]);
-
-			n.normal_pressure_vector_.x = _ttof(words[1]);
-			n.normal_pressure_vector_.y = _ttof(words[2]);
-			n.normal_pressure_vector_.z = _ttof(words[3]);
+			NastranNode& node = *(nodes_[it->second]);
+			CMzPoint& vector = normal_pressure ? node.normal_pressure_vector_ : node.tangent_pressure_vector_;
+			vector.x = _ttof(words[1]);
+			vector.y = _ttof(words[2]);
+			vector.z = _ttof(words[3]);
 		}
 	}
 
 	cFile.Close();
-
 	return 0;
+}
+
+int NastranModel::ReadNormalPressureFile(const CString& fpath)
+{
+	return ReadPressureFile(fpath, true);
 }
 
 int NastranModel::ReadTangentPressureFile(const CString& fpath)
 {
-
-	CStdioFile		cFile;
-	BOOL			ret = FALSE;
-	CString			delimiters;
-	CString			line;
-	CString			msg;
-	CStringArray	words;
-
-	//Clear();
-
-	ret = cFile.Open(fpath, CFile::modeRead | CFile::shareDenyNone);
-	if (ret == FALSE) {
-		msg.Format(_T("ファイルがOpenできません(%s)\n"),fpath );
-		WriteLog( msg );
-		return 1;
-	}
-
-	int line_count = 0;
-
-	// 9行スキップ
-	for ( int i=0; i<9; i++ ) {
-		line_count++;
-		if ( ! cFile.ReadString(line) ) {
-			msg.Format(_T(" #ERROR フォーマット異常あり(%d)行目\n"), line_count);
-			WriteLog(msg);
-			return 1;
-		}
-	}
-
-	delimiters = " ";
-
-	// データ
-	while (cFile.ReadString(line)) {
-
-		line_count++;
-
-		SplitString( line, delimiters, words );
-
-		if ( words.GetCount() ==4 ) {
-
-			int crnt_id = _ttoi(words[0]);
-
-			auto it =  node_id_to_index_.find(crnt_id);
-			if (it == node_id_to_index_.end() ) {
-				msg.Format(_T(" #ERROR ノードIDが見つかりません(%d)行目. ID=(%d)\n"), line_count,crnt_id);
-				WriteLog(msg);
-				return 1;
-			}
-
-			int index = (*it).second;
-			NastranNode& n = *(nodes_[index]);
-
-			n.tangent_pressure_vector_.x = _ttof(words[1]);
-			n.tangent_pressure_vector_.y = _ttof(words[2]);
-			n.tangent_pressure_vector_.z = _ttof(words[3]);
-		}
-	}
-
-	cFile.Close();
-
-	return 0;
+	return ReadPressureFile(fpath, false);
 }
-
 // ノード毎の荷重ベクトルを求める
-int NastranModel::CalculateForces()
+int NastranModel::AccumulateElementAreas()
 {
-
-	// ノードの担当面積を求める
 	for (int i=0; i<elements_.size(); i++ ) {
 
 		NastranElement& e = *(elements_[i]);
-
-		// 要素面積を求める
 
 		if ( e.type_ == CTRIA3 ) {
 
@@ -436,17 +350,28 @@ int NastranModel::CalculateForces()
 			double node_area = e.area_ / 2.0;
 			n0.area_ += node_area;
 			n1.area_ += node_area;
-
 		}
 	}
 
-	// 荷重を計算
+	return 0;
+}
+
+void NastranModel::CalculateNodeForces()
+{
 	for ( int i=0; i<nodes_.size(); i++ ) {
 		NastranNode& n = *(nodes_[i]);
 		n.pressure_vector_ = n.normal_pressure_vector_ + n.tangent_pressure_vector_;
-		n.force_vector_ = n.pressure_vector_ * n.area_ * 1000.0;	// 単位:(N)
+		n.force_vector_ = n.pressure_vector_ * n.area_ * 1000.0;
+	}
+}
+
+int NastranModel::CalculateForces()
+{
+	if (AccumulateElementAreas() != 0) {
+		return 1;
 	}
 
+	CalculateNodeForces();
 	return 0;
 }
 
